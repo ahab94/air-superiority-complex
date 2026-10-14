@@ -505,10 +505,13 @@ func _draw() -> void:
 	_fo = (vs - Vector2(Sim.W, Sim.H) * _fs) / 2.0
 	view.fit(vs)
 	# Dim the 3D scene outside the playfield so the eye stays on the action.
-	draw_rect(Rect2(0, 0, _fo.x, vs.y), Color(0.03, 0.05, 0.1, 0.72))
-	draw_rect(Rect2(vs.x - _fo.x, 0, _fo.x, vs.y), Color(0.03, 0.05, 0.1, 0.72))
-	draw_rect(Rect2(0, 0, vs.x, _fo.y), Color(0.03, 0.05, 0.1, 0.72))
-	draw_rect(Rect2(0, vs.y - _fo.y, vs.x, _fo.y), Color(0.03, 0.05, 0.1, 0.72))
+	# (--clean, for trailers: no dimming and no side text; the world fills the frame.)
+	var clean: bool = opts.has("clean")
+	if not clean:
+		draw_rect(Rect2(0, 0, _fo.x, vs.y), Color(0.03, 0.05, 0.1, 0.72))
+		draw_rect(Rect2(vs.x - _fo.x, 0, _fo.x, vs.y), Color(0.03, 0.05, 0.1, 0.72))
+		draw_rect(Rect2(0, 0, vs.x, _fo.y), Color(0.03, 0.05, 0.1, 0.72))
+		draw_rect(Rect2(0, vs.y - _fo.y, vs.x, _fo.y), Color(0.03, 0.05, 0.1, 0.72))
 	_field()
 	if state == "menu":
 		# Title-screen demo: just the world, no HUD; the menu draws on top.
@@ -521,7 +524,8 @@ func _draw() -> void:
 	elif state == "end" and _state_t > 0.6:
 		_draw_end()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	_draw_side(vs)
+	if not clean:
+		_draw_side(vs)
 
 
 ## Switch drawing into field coordinates.
@@ -785,7 +789,7 @@ func _draw_hud() -> void:
 		_text(Vector2(cx - 80, 58), "WIND", 9, Color(Art.HUD_TEXT, 0.7), HORIZONTAL_ALIGNMENT_RIGHT, 60)
 		draw_line(Vector2(cx, 55), Vector2(cx + len, 55), Color(0.8, 0.9, 1.0, 0.8), 2.0)
 		draw_circle(Vector2(cx + len, 55), 2.5, Color(0.8, 0.9, 1.0, 0.8))
-	if not sim.players[1].active and state == "play" and fmod(_t, 1.2) < 0.8:
+	if not sim.players[1].active and state == "play" and fmod(_t, 1.2) < 0.8 and not opts.has("clean"):
 		_text(Vector2(0, 46), "P2: press Enter to join", 11, Color(Art.HUD_TEXT, 0.7), HORIZONTAL_ALIGNMENT_CENTER, Sim.W)
 
 

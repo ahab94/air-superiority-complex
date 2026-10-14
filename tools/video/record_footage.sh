@@ -26,7 +26,7 @@ record() {  # name resolution level extra-flags...
 	if [ -n "${ONLY:-}" ] && [[ " $ONLY " != *" $name "* ]]; then return; fi
 	if [ "$res" = 1080x1920 ]; then window 1080 1920; else window 1920 1080; fi
 	"$GODOT" --path . --write-movie "$out/$name.avi" --fixed-fps 30 \
-		-- --level="$level" --autopilot --exit-on-end --linger=1.5 --log-events --timeout=110 "$@" \
+		-- --level="$level" --autopilot --clean --exit-on-end --linger=1.5 --log-events --timeout=110 "$@" \
 		| grep -E "^(EVENT|RESULT)" > "$out/$name.events" || true
 	rm -f override.cfg
 	ffmpeg -loglevel error -y -i "$out/$name.avi" -c:v libx264 -preset fast -crf 16 \

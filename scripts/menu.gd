@@ -55,6 +55,8 @@ func _build() -> void:
 		"title":
 			_items = [["Campaign", "select"], ["Co-op: %s" % ("On (2 players)" if coop else "Off"), "coop"],
 				["Options", "options"], ["Controls", "controls"], ["Quit", "quit"]]
+			if OS.has_feature("web"):
+				_items.pop_back()          # a browser tab can't quit itself
 		"select":
 			_items = []
 			for n in Levels.LIST.size():

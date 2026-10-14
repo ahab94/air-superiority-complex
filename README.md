@@ -1,5 +1,9 @@
 # Air Superiority Complex
 
+<p align="center"><a href="https://ahab94.github.io/air-superiority-complex/"><img src="docs/media/demo.gif" width="320" alt="A missile salvo tearing through an enemy formation over the sea"></a></p>
+
+<p align="center"><b><a href="https://ahab94.github.io/air-superiority-complex/">▶ Play free in your browser</a></b></p>
+
 A satirical arcade shooter in the style of Space Invaders. The jets are parodies of real ones, the countries are made up, and every mission is based on a real incident or a famous dogfight. Play solo, or a friend can drop in for local co-op at any time.
 
 > "So there I am, Bearovia, '76. Fastest jet on Earth, fuel tank of a lawnmower..."

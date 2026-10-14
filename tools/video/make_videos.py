@@ -97,9 +97,13 @@ def caption_png(path, text, style, orient):
         img.save(path)
         return
     if style == "big":
-        draw_centered(d, lines, H * (0.29 if portrait else 0.5), 150 if portrait else 140, YELLOW, W, stroke=14)
+        # Punchlines go mid-screen: between the enemy formation and our jet.
+        size = 150 if portrait else 140
+        while size > 60 and max(d.textlength(l, font=font(size)) for l in lines) > W - 90:
+            size -= 6                      # shrink to fit the frame
+        draw_centered(d, lines, H * 0.5, size, YELLOW, W, stroke=14)
     elif style == "note":
-        draw_centered(d, lines, H * 0.39, 48, (200, 220, 230), W, stroke=6)
+        draw_centered(d, lines, H * 0.57, 48, (220, 230, 240), W, stroke=6)
     elif style == "counter":
         draw_centered(d, lines, H * 0.84, 110, GREEN, W, stroke=12)
     elif style == "cta":   # call to action with the play link, above the Shorts UI
@@ -124,11 +128,13 @@ def caption_png(path, text, style, orient):
         d.rounded_rectangle([(W - box_w) / 2, y0, (W + box_w) / 2, y0 + box_h], 28, fill=(3, 10, 18, 190))
         draw_centered(d, lines, y0 + box_h / 2, size, (255, 255, 255), W, stroke=0)
     else:  # hook: the top band of a Short, where the platform UI doesn't cover it
-        size = 84 if max(len(l) for l in lines) <= 18 else 70
+        size = 76 if max(len(l) for l in lines) <= 18 else 62
         f = font(size)
         widths = [d.textlength(l, font=f) for l in lines]
         box_w, box_h = min(W - 40, max(widths) + 70), len(lines) * size * 1.15 + 44
-        cy = H * 0.215
+        # Over the HUD strip at the very top: in this game the enemies fly
+        # just below it, so captions must not sit on the formation.
+        cy = H * 0.115
         d.rounded_rectangle([(W - box_w) / 2, cy - box_h / 2, (W + box_w) / 2, cy + box_h / 2], 34,
                             fill=(255, 255, 255, 235))
         draw_centered(d, lines, cy, size, INK, W, stroke=0)
@@ -189,7 +195,226 @@ def thumbnail_png(path, frame_src=None, t=0.0, lines=("WHO WON?", "BOTH."), colo
     img.save(path)
 
 
-VIDEOS = []   # filled in below
+# --- The videos --------------------------------------------------------------
+# Segment times are in seconds of the source clip (from its .events file);
+# caption and sfx times are in seconds of the finished video, counted from
+# the first gameplay frame (after any intro card).
+
+T1 = ["air superiority complex", "game trailer", "indie game trailer"]
+SH = ["shorts"]
+
+VIDEOS = [
+    {
+        "id": "01-trailer", "orient": "landscape", "music": "cold_war",
+        "intro": ("EVERY DOGFIGHT\nIS A TALL TALE.", 2.6),
+        "segments": [
+            ("l-01", 1.4, 6.0, 1.2), ("l-01", 21.8, 25.2, 1.0), ("l-02", 11.0, 15.0, 1.0),
+            ("l-03", 15.5, 21.5, 1.3), ("l-04", 18.5, 21.0, 1.0), ("l-05", 27.5, 32.5, 1.0),
+            ("l-06", 3.5, 7.5, 1.0), ("l-07", 23.0, 27.0, 1.2), ("l-08", 10.5, 13.0, 1.0),
+            ("l-09", 16.0, 21.0, 1.3), ("l-10", 11.0, 16.0, 1.0),
+        ],
+        "captions": [
+            (0.2, 3.8, "Parody jets. Made-up countries.", "low"),
+            (3.9, 7.2, "Lock on. Let go.", "low"),
+            (7.3, 11.2, "No guns. One camera.", "low"),
+            (11.3, 15.8, "Don't shoot across the river.", "low"),
+            (15.9, 18.3, "Outrun the missiles.", "low"),
+            (18.4, 23.3, "Bring down the Tuba Grizzly.", "low"),
+            (23.4, 27.3, "Five in a minute*", "low"),
+            (27.4, 30.6, "Monsoon dogfights.", "low"),
+            (30.7, 33.1, "Night. Heat-seekers. Flares.", "low"),
+            (33.2, 37.0, "Mountain turbulence.", "low"),
+            (37.1, 42.0, "Then switch sides.", "low"),
+        ],
+        "sfx": [(-2.4, "pop"), (-0.5, "slide_up"), (24.6, "kaching", 0.8), (38.3, "stamp", 0.8)],
+        "cut_whoosh": True, "caption_pop": False, "outro": 4.5,
+        "thumb": ("l-10", 12.6, ("WHO WON?", "BOTH.")),
+        "title": "Air Superiority Complex: every dogfight is a tall tale (free browser game trailer)",
+        "blurb": "Parody jets, made-up countries, ten missions told as tall tales in a bar. Cannons, lock-on missiles, flares and two press offices that both claim victory.",
+        "tags": BASE_TAGS + T1,
+    },
+    {
+        "id": "01b-trailer-short", "orient": "portrait", "music": "cold_war",
+        "intro": ("EVERY\nDOGFIGHT IS\nA TALL TALE.", 2.0),
+        "segments": [
+            ("p-01", 21.8, 25.2, 1.0), ("p-02", 11.0, 14.5, 1.0), ("p-04", 18.5, 21.0, 1.0),
+            ("p-05", 27.5, 32.5, 1.1), ("p-06", 3.5, 7.0, 1.0), ("p-08", 10.5, 13.0, 1.0),
+            ("p-09", 16.0, 20.0, 1.3), ("p-10", 11.0, 15.5, 1.0),
+        ],
+        "captions": [
+            (0.1, 3.3, "Lock on. Let go.", "hook"),
+            (3.4, 6.8, "No guns.\nOne camera.", "hook"),
+            (6.9, 9.3, "Outrun the missiles", "hook"),
+            (9.4, 13.8, "Boss: the\nTUBA GRIZZLY", "hook"),
+            (13.9, 17.3, "Five in a minute*", "hook"),
+            (17.4, 19.8, "Night. Flares.", "hook"),
+            (19.9, 22.8, "Mountains", "hook"),
+            (22.9, 27.3, "Then switch sides.", "hook"),
+        ],
+        "sfx": [(-1.8, "pop"), (-0.4, "slide_up"), (15.4, "kaching", 0.8), (24.2, "stamp", 0.8)],
+        "cut_whoosh": True, "outro": 3.5,
+        "title": "Every dogfight is a tall tale ✈️ #shorts",
+        "blurb": "A free satirical jet shooter: parody jets, made-up countries, ten missions. Play it in your browser.",
+        "tags": BASE_TAGS + SH + ["game trailer"],
+    },
+    {
+        "id": "02-both-sides-win", "orient": "portrait", "music": "subcontinent",
+        "segments": [("p-10", 1.5, 14.5, 1.1), ("p-06", 3.5, 8.0, 1.0)],
+        "captions": [
+            (0.0, 3.0, "I made a game where\nBOTH SIDES WIN", "hook"),
+            (3.0, 7.0, "Missiles only.\nNobody crosses the line.", "hook"),
+            (7.0, 9.7, "Lock four. Let go.", "hook"),
+            (9.7, 11.8, "...then I switched sides", "hook"),
+            (11.8, 16.3, "Kills: 8\nClaimed: 16", "hook"),
+        ],
+        "sfx": [(9.8, "stamp"), (10.0, "kaching", 0.8), (13.75, "kaching"), (13.9, "boing", 0.6)],
+        "cut_whoosh": True,
+        "title": "I made a game where BOTH SIDES always win ✈️ #shorts",
+        "blurb": "Two neighbours, one Line nobody crosses, and two Ministries of Claims that both announce victory. It's a free browser game.",
+        "tags": BASE_TAGS + SH + ["i made a game", "satire game"],
+    },
+    {
+        "id": "03-flares", "orient": "portrait", "music": "subcontinent",
+        "segments": [("p-08", 9.5, 20.5, 1.0), ("p-04", 8.0, 15.8, 1.0)],
+        "captions": [
+            (0.0, 2.4, "Heat-seeker\nincoming...", "hook"),
+            (2.4, 3.8, "FLARES!", "big"),
+            (3.8, 8.6, "Works every time*", "hook"),
+            (7.6, 8.6, "*mostly", "note"),
+            (9.9, 11.0, "AGAIN!", "big"),
+            (11.0, 18.8, "Even in a spy jet\nwith NO GUNS", "hook"),
+        ],
+        "sfx": [(1.3, "uh_oh", 0.8), (2.4, "slide_up", 0.7), (9.9, "slide_up", 0.7)],
+        "cut_whoosh": True,
+        "title": "Heat-seeker vs flares 🔥 #shorts",
+        "blurb": "Every missile in this game can be fooled by flares. Mostly. Free to play in your browser.",
+        "tags": BASE_TAGS + SH + ["flares", "missile dodge"],
+    },
+    {
+        "id": "04-spy-no-guns", "orient": "portrait", "music": "cold_war",
+        "segments": [("p-02", 7.5, 23.0, 1.2)],
+        "captions": [
+            (0.0, 3.0, "A spy plane\nwith NO GUNS", "hook"),
+            (3.0, 4.6, "Say cheese.", "big"),
+            (4.6, 8.5, "Missile sites below.\nFlares only.", "hook"),
+            (8.5, 11.2, "Fly over the target...", "hook"),
+            (11.2, 12.9, "CLICK.", "big"),
+        ],
+        "sfx": [(3.9, "pop"), (12.3, "ding")],
+        "cut_whoosh": False,
+        "title": "Spy plane. No guns. One camera. 📸 #shorts",
+        "blurb": "In this mission your jet has no weapons: dodge the missile sites and photograph the targets. Free browser game.",
+        "tags": BASE_TAGS + SH + ["spy plane"],
+    },
+    {
+        "id": "05-outrun-missiles", "orient": "portrait", "music": "cold_war",
+        "segments": [("p-04", 8.5, 20.5, 1.2), ("p-reck-04", 9.5, 13.5, 1.0)],
+        "captions": [
+            (0.0, 3.2, "This jet has no guns.\nIts plan: go faster.", "hook"),
+            (3.2, 10.0, "Missiles can't catch\nwhat they can't reach", "hook"),
+            (10.0, 12.2, "Usually.", "big"),
+        ],
+        "sfx": [(11.9, "record_scratch"), (12.3, "sad_trombone", 0.9)],
+        "cut_whoosh": True,
+        "title": "Trying to outrun missiles in a jet with no guns 🚀 #shorts",
+        "blurb": "The Blackbirb's only defence is speed. Mostly works. Free browser game.",
+        "tags": BASE_TAGS + SH + ["fail", "missile dodge"],
+    },
+    {
+        "id": "06-boss", "orient": "portrait", "music": "cold_war",
+        "segments": [("p-05", 25.0, 40.0, 1.2)],
+        "captions": [
+            (0.0, 3.0, "BOSS FIGHT:\nthe Tuba Grizzly", "hook"),
+            (3.0, 7.0, "4 missiles.\nBarely a dent.", "hook"),
+            (7.0, 11.4, "Cannons it is.", "hook"),
+            (11.5, 12.5, "DOWN!", "big"),
+        ],
+        "sfx": [(2.6, "uh_oh", 0.7), (11.5, "slide_down", 0.6)],
+        "title": "Boss fight: the TUBA GRIZZLY ✈️ #shorts",
+        "blurb": "A four-prop bomber with tail guns and feelings. Free browser game.",
+        "tags": BASE_TAGS + SH + ["boss fight"],
+    },
+    {
+        "id": "07-coffee-two-sugars", "orient": "portrait", "music": "subcontinent",
+        "segments": [("p-reck-09", 6.5, 24.5, 1.25)],
+        "captions": [
+            (0.0, 2.1, "Shot down over\nthe border?", "hook"),
+            (2.1, 5.8, "Steer your parachute\nHOME...", "hook"),
+            (5.9, 9.8, "...or stay for coffee.", "hook"),
+            (9.9, 13.6, "Me, every time:", "hook"),
+            (13.6, 14.4, "Two sugars.", "big"),
+        ],
+        "sfx": [(2.08, "record_scratch"), (5.86, "tea"), (9.86, "bonk"), (13.64, "tea")],
+        "cut_whoosh": False,
+        "title": "Shot down? Steer home... or stay for coffee ☕ #shorts",
+        "blurb": "Land your parachute on the wrong side and the neighbours put the kettle on. Free browser game.",
+        "tags": BASE_TAGS + SH + ["funny game", "parachute"],
+    },
+    {
+        "id": "08-sanctuary", "orient": "portrait", "music": "cold_war",
+        "segments": [("p-03", 8.0, 22.0, 1.3)],
+        "captions": [
+            (0.0, 3.4, "You may NOT shoot\nacross the river.", "hook"),
+            (3.4, 6.0, "They know.", "big"),
+            (6.0, 10.8, "So they wait...\nthen dive out.", "hook"),
+        ],
+        "sfx": [(3.4, "uh_oh", 0.8)],
+        "title": "You're not allowed to shoot across the river 🌊 #shorts",
+        "blurb": "The enemy hides where you can't touch them. Catch them on the way out. Free browser game.",
+        "tags": BASE_TAGS + SH,
+    },
+    {
+        "id": "09-five-in-a-minute", "orient": "portrait", "music": "subcontinent",
+        "segments": [("p-06", 1.3, 21.0, 1.3)],
+        "captions": [
+            (0.0, 3.0, "Five kills\nin a minute?", "hook"),
+            (3.2, 5.0, "FIVE IN A MINUTE*", "big"),
+            (4.2, 5.0, "*figures disputed", "note"),
+            (5.0, 10.0, "Dodge the flak rings", "hook"),
+            (10.0, 14.6, "The ministry\nis counting...", "hook"),
+            (14.7, 15.2, "Claimed: lots.", "big"),
+        ],
+        "sfx": [(3.19, "kaching"), (14.73, "kaching")],
+        "title": "Five kills in a minute* (*figures disputed) #shorts",
+        "blurb": "The Ministry of Claims counts your kills. Generously. Free browser game.",
+        "tags": BASE_TAGS + SH + ["satire game"],
+    },
+    {
+        "id": "10-tiny-jet-monsoon", "orient": "portrait", "music": "subcontinent",
+        "segments": [("p-07", 1.3, 27.0, 1.5)],
+        "captions": [
+            (0.0, 3.2, "A fighter jet the size\nof a COFFEE TABLE", "hook"),
+            (3.2, 6.5, "...in a MONSOON", "hook"),
+            (6.5, 12.0, "Tiny. Angry.\nHard to hit.", "hook"),
+            (12.0, 17.1, "Wind: also angry.", "hook"),
+        ],
+        "sfx": [(3.2, "boing", 0.7)],
+        "title": "A fighter jet the size of a coffee table... in a monsoon 🌧️ #shorts",
+        "blurb": "The Fallin' Midge: so small enemies check their windscreens for bugs. Free browser game.",
+        "tags": BASE_TAGS + SH,
+    },
+    {
+        "id": "11-i-made-a-game", "orient": "portrait", "music": "cold_war",
+        "segments": [
+            ("p-01", 1.5, 6.0, 1.3), ("p-02", 11.0, 14.5, 1.0), ("p-04", 18.5, 21.0, 1.0),
+            ("p-05", 27.5, 31.5, 1.2), ("p-09", 16.0, 20.0, 1.3), ("p-10", 11.5, 15.5, 1.0),
+        ],
+        "captions": [
+            (0.0, 3.5, "I made a jet game\nwhere every mission\nis a tall tale", "hook"),
+            (3.5, 7.0, "Spy planes", "hook"),
+            (7.0, 9.5, "Missiles", "hook"),
+            (9.5, 12.8, "Bosses", "hook"),
+            (12.8, 15.9, "Mountains", "hook"),
+            (15.9, 19.9, "Free in your browser", "hook"),
+        ],
+        "sfx": [(15.9, "ding")],
+        "cut_whoosh": True,
+        "title": "I made a jet game where every mission is a tall tale ✈️ #shorts",
+        "blurb": "Ten missions, parody jets, made-up countries, all made in code with Godot. Should I make ten more?",
+        "tags": BASE_TAGS + SH + ["i made a game", "devlog"],
+    },
+]
+
 
 # --- Assembly --------------------------------------------------------------------
 
