@@ -37,6 +37,18 @@ A satirical Space-Invaders-style shooter in Godot 4.7 (GDScript), and the third 
 - M toggles music; `--no-music` turns it off. Autopilot runs are silent unless you pass `--music`.
 - Comedy stings, as the user likes: ka-ching (combo, side switch), a teacup, and a sad trombone on failure. Keep repeated sounds quiet and dark.
 
+## Release and videos
+- **Release:** GitHub repo `ahab94/air-superiority-complex` (public).
+  - Push a `v*` tag: `.github/workflows/release.yml` runs the checks, exports Windows, macOS, Linux and Web, attaches the zips to the Release, and deploys Web to Pages (https://ahab94.github.io/air-superiority-complex/).
+  - Write `docs/releases/<tag>.md` before tagging.
+  - Install one-liners: `install.sh`, `install.ps1`.
+- **Browser build:** uses the Compatibility renderer. scene3d.gd brightens it, turns SSAO off, and on the web uses a 2048 shadow map and MSAA 2x.
+- **Touch:** `scripts/touch.gd` shows a floating stick plus Fire, Missile, Flare and Pause buttons. It turns on with `DisplayServer.is_touchscreen_available()` or `--touch`, and presses the same input actions as the keys. Mouse-from-touch emulation is on, so the menus take taps.
+- **Videos:**
+  1. `bash tools/video/record_footage.sh [clips]` records Movie Maker footage into `build/footage/`: portrait 1080x1920 `p-NN`, landscape `l-NN`, and `p-reck-NN` with `--reckless` (no dodging or shooting, the parachute goes to the wrong side). Each clip gets a `.events` file from `--log-events` with exact moment times.
+  2. `python3 tools/video/make_video_audio.py` builds the stingers and music beds.
+  3. `/usr/bin/python3 tools/video/make_videos.py` writes `build/videos/` and `docs/marketing/youtube.md`.
+
 ## Layout
 - `scripts/sim.gd`: deterministic rules with no graphics. 480x720 portrait field, `step(inputs)` per 1/60 s, and an `events` list that the game drains for effects. It covers:
   - **squadrons**: several small formations per wave (vic, line, echelon, box, finger-four, pair). Each flies in from the top, brakes into its slot, then weaves or flies a figure 8. Paths are formulas of the squadron's clock, so `enemy_pos_in(e, t)` gives exact forecasts;

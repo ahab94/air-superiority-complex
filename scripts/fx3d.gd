@@ -17,6 +17,16 @@ var _puff: GradientTexture2D
 var _flash_mat: StandardMaterial3D
 
 
+## A new mission: drop every effect still playing from the last one (wrecks
+## still falling from the title-screen demo would otherwise streak by).
+func clear_all() -> void:
+	for c in get_children():
+		c.queue_free()
+	_wrecks.clear()
+	_drifters.clear()
+	_flashes.clear()
+
+
 func update(delta: float, airspeed: float, sea_speed: float) -> void:
 	for w in _wrecks.duplicate():
 		var n: Node3D = w.node

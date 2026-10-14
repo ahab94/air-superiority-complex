@@ -16,6 +16,9 @@ const SAFETY := 4.0          # extra pixels of margin around the hitbox
 
 var _last_x := [-1.0, -1.0]
 var _holding := [false, false]   # holding the missile button to build locks
+## For trailer gags: fly without dodging, shooting or flares, and steer the
+## parachute to the wrong side.
+var reckless := false
 
 
 func decide(sim, i: int) -> Dictionary:
@@ -25,7 +28,10 @@ func decide(sim, i: int) -> Dictionary:
 		_holding[i] = false
 		if p.has_chute and sim.level.get("tea", false):
 			# Steer the parachute home (and away from the tea).
-			var home_x: float = Sim.W * (0.25 if String(sim.level.get("home", "left")) == "left" else 0.75)
+			var home_left: bool = String(sim.level.get("home", "left")) == "left"
+			if reckless:
+				home_left = not home_left
+			var home_x: float = Sim.W * (0.25 if home_left else 0.75)
 			out.move = Vector2(clampf((home_x - Vector2(p.chute).x) / 20.0, -1.0, 1.0), 0)
 		return out
 	var pos: Vector2 = p.pos
@@ -64,7 +70,7 @@ func decide(sim, i: int) -> Dictionary:
 			cost += 0.25 * absf(x - _last_x[i])   # don't dither between two spots
 		if mate_on:
 			cost += maxf(0.0, 40.0 - absf(x - mate_pos.x)) * 3.0
-		var hit := _first_hit(sim, pos, Vector2(x, goal_y), jet)
+		var hit := -1 if reckless else _first_hit(sim, pos, Vector2(x, goal_y), jet)
 		if hit >= 0:
 			cost += 10000.0 + (HORIZON - hit) * 100.0
 		if cost < best_cost:
@@ -93,10 +99,10 @@ func decide(sim, i: int) -> Dictionary:
 	# Afterburner jets run from missiles, but not into an overheat.
 	if float(jet.boost) > 0.0 and closest < 300.0 and float(p.heat) < 0.85 and float(p.overheat) <= 0.0:
 		out.move.y = -1.0
-	if closest < 200.0 and float(p.flare_cd) <= 0.0:
+	if closest < 200.0 and float(p.flare_cd) <= 0.0 and not reckless:
 		out.flare = true
 
-	if sim.phase == "fight" and armed:
+	if sim.phase == "fight" and armed and not reckless:
 		if float(jet.gun) > 0.0 and sim.level.get("player_guns", true) and not sim.cloud_between(pos.x, pos.y - 20.0, 0.0):
 			for e in sim.enemies:
 				if sim.engageable(e.pos) and absf(_lead(sim, pos, e).x - pos.x) < Vector2(e.half).x - 2.0:

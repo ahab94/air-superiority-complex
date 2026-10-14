@@ -153,6 +153,7 @@ func load_level(n: int, st := "brief") -> void:
 	level_index = n
 	sim = Sim.new(Levels.LIST[n], start_players)
 	pilot = Autopilot.new()
+	pilot.reckless = opts.has("reckless")
 	view.reset(sim)
 	_scroll_prev = 0.0
 	_scroll_now = 0.0
@@ -425,7 +426,16 @@ func _event_sound(e: Dictionary) -> void:
 		"rearm": sound.play("lock_ok", -10.0)
 
 
+const LOGGED := ["kill", "player_hit", "player_damaged", "missile", "lock", "enemy_lock", "enemy_missile",
+	"emissile_hit", "flares", "decoyed", "flak", "photo", "overheat", "combo", "switch", "tea", "home",
+	"wave", "wave_clear", "approach", "rescue", "win", "lose", "roe"]
+
 func _consume_events() -> void:
+	if opts.has("log-events"):
+		# For video editing: game time (since launch) of each notable moment.
+		for e in sim.events:
+			if e.e in LOGGED:
+				print("EVENT %.2f %s %s" % [_t, e.e, str(e.get("boss", "")) if e.e == "kill" else ""])
 	for e in sim.events:
 		view.handle(e, sim)
 		_event_sound(e)
@@ -734,8 +744,8 @@ func _draw_fx(f: Dictionary) -> void:
 func _draw_hud() -> void:
 	var lv: Dictionary = sim.level
 	draw_rect(Rect2(0, 0, Sim.W, 28), Color(Art.OUTER, 0.7))
-	_text(Vector2(10, 19), "M%d · %s" % [level_index + 1, String(lv.name).to_upper()], 12, Art.HUD_TEXT)
-	_text(Vector2(Sim.W - 210, 19), "SCORE %06d" % sim.score, 12, Art.GOLD, HORIZONTAL_ALIGNMENT_RIGHT, 200)
+	_text(Vector2(16, 19), "M%d · %s" % [level_index + 1, String(lv.name).to_upper()], 12, Art.HUD_TEXT)
+	_text(Vector2(Sim.W - 216, 19), "SCORE %06d" % sim.score, 12, Art.GOLD, HORIZONTAL_ALIGNMENT_RIGHT, 200)
 	draw_rect(Rect2(0, Sim.H - 30, Sim.W, 30), Color(Art.OUTER, 0.7))
 	if float(lv.get("fuel_rate", 0.0)) > 0.0:
 		_text(Vector2(10, Sim.H - 10), "FUEL", 12, Art.HUD_TEXT)
@@ -749,7 +759,7 @@ func _draw_hud() -> void:
 		if frac < 0.35:
 			_text(Vector2(176, Sim.H - 10), "FUMES", 12, col)
 	else:
-		_text(Vector2(10, Sim.H - 10), String(sim.jet.name).to_upper(), 11, Color(Art.HUD_TEXT, 0.8))
+		_text(Vector2(16, Sim.H - 10), String(sim.jet.name).to_upper(), 11, Color(Art.HUD_TEXT, 0.8))
 	for k in sim.lives:
 		Art.jet(self, "foxbrat", Vector2(Sim.W - 18 - k * 20, Sim.H - 15), 0.0, Art.P_COLORS[0], 0.4)
 	# Objective line under the top bar.
@@ -765,7 +775,7 @@ func _draw_hud() -> void:
 				obj = "LAND ON THE STRIP"
 			elif not lv.waves.is_empty():
 				obj = "WAVE %d/%d" % [sim.wave + 1, lv.waves.size()]
-	_text(Vector2(10, 42), obj, 11, Color(Art.HUD_TEXT, 0.9))
+	_text(Vector2(16, 42), obj, 11, Color(Art.HUD_TEXT, 0.9))
 	if lv.get("claims", false):
 		_text(Vector2(Sim.W - 290, 42), "KILLS %d · CLAIMED %d" % [sim.kills, sim.claims], 11, Art.GOLD, HORIZONTAL_ALIGNMENT_RIGHT, 280)
 	if lv.has("wind"):

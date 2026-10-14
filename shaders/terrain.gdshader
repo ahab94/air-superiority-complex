@@ -84,7 +84,11 @@ float settlements(vec2 p, out float roofs, out float glow) {
 	vec2 q = p * 0.9;
 	vec2 b = floor(q);
 	vec2 f = fract(q) - 0.5;
-	float house = step(0.5, hash(b)) * (1.0 - smoothstep(0.18, 0.38, max(abs(f.x), abs(f.y))));
+	// Each house gets its own size and offset, so a village isn't a grid.
+	vec2 jitter = (vec2(hash(b + 2.3), hash(b + 8.9)) - 0.5) * 0.3;
+	float size = 0.16 + hash(b + 4.4) * 0.2;
+	vec2 g = abs(f - jitter);
+	float house = step(0.45, hash(b)) * (1.0 - smoothstep(size, size + 0.12, max(g.x, g.y * (0.7 + hash(b + 1.7) * 0.6))));
 	roofs = area * house;
 	vec2 lq = p * 0.6;
 	float lamp = step(0.72, hash(floor(lq) + 9.0)) * (1.0 - smoothstep(0.0, 0.3, length(fract(lq) - 0.5)));

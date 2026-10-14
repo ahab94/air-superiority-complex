@@ -5,7 +5,7 @@ render_mode unshaded, depth_draw_never, cull_disabled, shadows_disabled;
 
 uniform sampler2D noise_tex;
 uniform float spread = 0.32;
-uniform float strength = 1.0;
+uniform float strength = 0.55;
 
 void fragment() {
 	float y = UV.y;

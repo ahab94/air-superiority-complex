@@ -453,6 +453,10 @@ func reset(sim) -> void:
 	runway.visible = false
 	land_t = 0.0
 	_last_scroll = 0.0
+	fx.clear_all()
+	for tr in dying_trails:
+		tr.node.queue_free()
+	dying_trails.clear()
 	_cloud_sig = -1
 	for i in 2:
 		_prev[i] = sim.players[i].pos

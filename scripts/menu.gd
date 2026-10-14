@@ -232,7 +232,7 @@ func _draw_title(vs: Vector2, s: float) -> void:
 	_str(Vector2(0, y + 62 * s), "COMPLEX", 64 * s, ACCENT, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
 	_str(Vector2(0, y + 100 * s), "Stories from a bar. Some of them true.", 18 * s, DIM, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
 	_menu_items(Vector2(cx - 170 * s, y + 160 * s), 340 * s, s)
-	_str(Vector2(0, vs.y - 24 * s), "↑↓ choose · Enter select · Esc back", 14 * s, DIM, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
+	_str(Vector2(0, vs.y - 24 * s), "Up/Down: choose · Enter: select · Esc: back", 14 * s, DIM, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
 
 
 func _draw_list(vs: Vector2, s: float, title: String, hint: String) -> void:
@@ -302,7 +302,7 @@ func _draw_select(vs: Vector2, s: float) -> void:
 			_str(Vector2(dx + 110 * s, ry), row[1], 16 * s, TEXT, HORIZONTAL_ALIGNMENT_LEFT, dw - 110 * s)
 			ry += 28 * s
 		draw_multiline_string(_font, Vector2(dx, ry + 20 * s), "\"" + String(lv.quote) + "\"", HORIZONTAL_ALIGNMENT_LEFT, dw, int(16 * s), -1, Color("d3d1c7"))
-	_str(Vector2(0, vs.y - 24 * s), "↑↓ choose · Enter fly · Esc back", 14 * s, DIM, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
+	_str(Vector2(0, vs.y - 24 * s), "Up/Down: choose · Enter: fly · Esc: back", 14 * s, DIM, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
 
 
 func _draw_options(vs: Vector2, s: float) -> void:
@@ -328,7 +328,7 @@ func _draw_options(vs: Vector2, s: float) -> void:
 				draw_rect(br, ACCENT if b < v else Color(1, 1, 1, 0.15))
 		else:
 			_str(r.position + Vector2(0, h * 0.66), String(_items[k][0]), 20 * s, col, HORIZONTAL_ALIGNMENT_CENTER, w)
-	_str(Vector2(0, vs.y - 24 * s), "←→ adjust · Esc back", 14 * s, DIM, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
+	_str(Vector2(0, vs.y - 24 * s), "Left/Right: adjust · Esc: back", 14 * s, DIM, HORIZONTAL_ALIGNMENT_CENTER, vs.x)
 
 
 func _draw_controls(vs: Vector2, s: float) -> void:

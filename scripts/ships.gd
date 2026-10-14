@@ -90,6 +90,7 @@ func _hull(length: float, beam: float, height: float, side: Color, deck: Color) 
 	st.generate_normals()
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
+	mat.vertex_color_is_srgb = true      # the hull colours above are screen colours
 	mat.roughness = 0.7
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	var mi := MeshInstance3D.new()
