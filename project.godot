@@ -1,0 +1,31 @@
+config_version=5
+
+[application]
+config/name="Air Superiority Complex"
+config/description="A satirical arcade shooter: parody jets, made-up countries, real incidents."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7")
+config/version="0.1.0"
+config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.06, 0.1, 0.18, 1)
+boot_splash/show_image=false
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[input_devices]
+pointing/emulate_mouse_from_touch=true
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+
+anti_aliasing/quality/msaa_3d=2
+anti_aliasing/quality/screen_space_aa=0
+anti_aliasing/quality/use_debanding=true
+textures/default_filters/anisotropic_filtering_level=4
+lights_and_shadows/directional_shadow/size=8192
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
+textures/vram_compression/import_etc2_astc=true
