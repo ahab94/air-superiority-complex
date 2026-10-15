@@ -18,6 +18,7 @@ func _init() -> void:
 	_test_missiles()
 	_test_flares()
 	_test_tea()
+	_test_stealth_needs_awacs()
 	for n in Levels.LIST.size():
 		for players in [1, 2]:
 			var r := play(n, players)
@@ -142,6 +143,31 @@ func _test_tea() -> void:
 				break
 		var want := "home" if side < 0.0 else "tea"
 		_check(got == want, "steering the parachute %s should end in %s (got '%s')" % ["left" if side < 0 else "right", want, got])
+
+
+## Stealth is modern kit: cloaked squadrons only in waves with an AWACS, only
+## in missions set after 2000, and never left cloaked once the AWACS is gone.
+func _test_stealth_needs_awacs() -> void:
+	for lv in Levels.LIST:
+		for w in lv.waves:
+			for spec in w:
+				if spec.get("cloaked", false) or spec.get("awacs", false):
+					_check(int(lv.year) >= 2000, "%s: AWACS/stealth only in modern missions" % lv.name)
+				if spec.get("cloaked", false):
+					_check(Sim._wave_has_awacs(w), "%s: a cloaked squadron without an AWACS" % lv.name)
+	var sim = Sim.new(Levels.LIST[14], 1)
+	for k in 120:
+		sim.step(_idle())
+	_check(sim.chain_up, "the kill chain should be up while the AWACS flies")
+	for e in sim.enemies.duplicate():
+		if e.get("awacs", false):
+			sim.enemies.erase(e)
+	sim.step(_idle())
+	var still_hidden := false
+	for e in sim.enemies:
+		if not sim.hittable(e) and not e.get("phantom", false):
+			still_hidden = true
+	_check(not still_hidden, "no fighter may stay cloaked once every AWACS is down")
 
 
 func _test_flameout() -> void:

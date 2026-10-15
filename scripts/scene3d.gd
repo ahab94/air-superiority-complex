@@ -84,6 +84,7 @@ var _storm := false
 var _base_sun := 1.0
 var lightning_level := 0.0            # 0..1, read by the HUD for a screen flash
 var _stealth_mat: ShaderMaterial
+var _ghost_mat: StandardMaterial3D
 var _disguised_shown := false
 
 
@@ -820,7 +821,9 @@ func _sync_enemies(sim, delta: float) -> void:
 		# out) swap their paint for the refracting stealth material.
 		var hidden: bool = not sim.hittable(e)
 		if hidden != bool(node.get_meta("hidden")):
-			node = _restealth(id, e, hidden)
+			# Modern stealth camo for AWACS-cloaked fighters; the phantom ace
+			# (an old-war legend) just fades into mist.
+			node = _restealth(id, e, hidden, "ghost" if e.get("phantom", false) else "stealth")
 			if not hidden:
 				fx.impact(node.position)
 		# Afterburners blaze while they dive in, then settle; damage makes them cough.
@@ -842,31 +845,36 @@ func _sync_enemies(sim, delta: float) -> void:
 ## up a shadow-casting change on a live node (cloaked jets kept casting
 ## shadows), so build a fresh node with the right setting before it enters
 ## the scene, and carry over position, rotation and state.
-func _restealth(id: int, e: Dictionary, on: bool) -> Node3D:
+func _restealth(id: int, e: Dictionary, on: bool, look := "stealth") -> Node3D:
 	var old: Node3D = enemy_nodes[id]
 	var shape: String = Jets.get_jet(String(e.jet)).shape
 	var node := JetMesh.make(shape, skins.get(e.kind, skins.C), 0.7)
 	node.transform = old.transform
 	for m in old.get_meta_list():
 		node.set_meta(m, old.get_meta(m))
-	_set_stealth(node, on, skins.get(e.kind, skins.C))
+	_set_stealth(node, on, skins.get(e.kind, skins.C), look)
 	add_child(node)
 	old.queue_free()
 	enemy_nodes[id] = node
 	return node
 
 
-func _set_stealth(node: Node3D, on: bool, skin: ShaderMaterial) -> void:
+func _set_stealth(node: Node3D, on: bool, skin: ShaderMaterial, look := "stealth") -> void:
 	if _stealth_mat == null:
 		_stealth_mat = ShaderMaterial.new()
 		_stealth_mat.shader = STEALTH
+		_ghost_mat = StandardMaterial3D.new()
+		_ghost_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_ghost_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_ghost_mat.albedo_color = Color(0.86, 0.9, 0.94, 0.16)
+	var hide_mat: Material = _ghost_mat if look == "ghost" else _stealth_mat
 	node.set_meta("hidden", on)
 	for c in node.get_children():
 		if c is MeshInstance3D and (c as MeshInstance3D).mesh is ArrayMesh:
 			var mi: MeshInstance3D = c
 			if on:
-				mi.set_surface_override_material(0, _stealth_mat)
-				mi.set_surface_override_material(1, _stealth_mat)
+				mi.set_surface_override_material(0, hide_mat)
+				mi.set_surface_override_material(1, hide_mat)
 			else:
 				mi.set_surface_override_material(0, skin)
 				mi.set_surface_override_material(1, JetMesh._glass())

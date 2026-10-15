@@ -19,9 +19,34 @@ var _holding := [false, false]   # holding the missile button to build locks
 ## For trailer gags: fly without dodging, shooting or flares, and steer the
 ## parachute to the wrong side.
 var reckless := false
+## A human-like pilot for measuring difficulty: reacts only every few frames,
+## aims a little off, sees danger late, and sometimes forgets the flares.
+var rookie := false
+var _rng := RandomNumberGenerator.new()
+var _held := [{}, {}]
+var _hold_frames := [0, 0]
+
+
+func _init() -> void:
+	_rng.seed = 7
 
 
 func decide(sim, i: int) -> Dictionary:
+	if rookie:
+		# Reaction time: keep the last decision for a few frames.
+		_hold_frames[i] -= 1
+		if _hold_frames[i] > 0 and not _held[i].is_empty():
+			return _held[i]
+		_hold_frames[i] = 9
+		var d := _decide(sim, i)
+		if d.flare and _rng.randf() < 0.45:
+			d.flare = false          # panicked and forgot
+		_held[i] = d
+		return d
+	return _decide(sim, i)
+
+
+func _decide(sim, i: int) -> Dictionary:
 	var out := {"move": Vector2.ZERO, "fire": false, "missile": false, "flare": false}
 	var p: Dictionary = sim.players[i]
 	if not p.alive:
@@ -58,6 +83,8 @@ func decide(sim, i: int) -> Dictionary:
 			var target = _pick_target(sim, pos, mate_pos if mate_on else Vector2(-999, 0))
 			if target != null:
 				aim_x = _lead(sim, pos, target).x
+				if rookie:
+					aim_x += _rng.randf_range(-14.0, 14.0)
 		else:
 			aim_x = Sim.W * (0.35 if i == 0 else 0.65)
 
@@ -72,7 +99,7 @@ func decide(sim, i: int) -> Dictionary:
 			cost += maxf(0.0, 40.0 - absf(x - mate_pos.x)) * 3.0
 		var hit := -1 if reckless else _first_hit(sim, pos, Vector2(x, goal_y), jet)
 		if hit >= 0:
-			cost += 10000.0 + (HORIZON - hit) * 100.0
+			cost += (2500.0 if rookie else 10000.0) + (HORIZON - hit) * 100.0
 		if cost < best_cost:
 			best_cost = cost
 			best_x = x
@@ -161,8 +188,9 @@ func _missile_plan(sim, i: int, p: Dictionary) -> bool:
 			formed += 1
 			boss = boss or e.boss or e.get("awacs", false) or e.get("phantom", false)
 	var hurt: bool = sim.damage(p) > 0.5
-	var plenty: bool = int(p.missiles) > 4 or not sim.level.get("player_guns", true)
-	if formed >= 9 or (boss and formed >= 1) or (hurt and formed >= 3) or (plenty and formed >= 2):
+	var no_guns: bool = not sim.level.get("player_guns", true)
+	var plenty: bool = int(p.missiles) > 4 or no_guns
+	if formed >= 9 or (boss and formed >= 1) or (hurt and formed >= 3) or (plenty and formed >= (1 if no_guns else 2)):
 		_holding[i] = true
 		return true
 	return false
@@ -209,7 +237,7 @@ func _first_hit(sim, from: Vector2, to: Vector2, jet: Dictionary) -> int:
 	if sim.level.has("flak"):
 		flak_r = float(sim.level.flak.radius) + 8.0
 	var pos := from
-	for f in range(1, HORIZON + 1):
+	for f in range(1, (16 if rookie else HORIZON) + 1):
 		var d := to - pos
 		d.x /= agility
 		var stepv := d.limit_length(speed)

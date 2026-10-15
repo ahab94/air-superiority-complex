@@ -22,6 +22,11 @@ var _flash_mat: StandardMaterial3D
 func clear_all() -> void:
 	for c in get_children():
 		c.queue_free()
+	# Wrecks are jet nodes that live in the 3D scene (not under fx), so free
+	# them explicitly; otherwise they freeze mid-crash into the next mission.
+	for w in _wrecks:
+		if is_instance_valid(w.node):
+			w.node.queue_free()
 	_wrecks.clear()
 	_drifters.clear()
 	_flashes.clear()

@@ -25,6 +25,16 @@ A satirical Space-Invaders-style shooter in Godot 4.7 (GDScript), and the third 
 - Put `--fixed-fps 60` before `--` to run faster than real time. Timers count game time, so `--wait` is in game seconds.
 - Visual check: `godot --path . -- --autopilot --players=2 --screenshot=<scratchpad>/x.png --wait=9`, then Read the PNG.
 
+## Difficulty curve
+- Every mission has a `difficulty` (its position, 1..N). sim.gd turns it into a 0..1 `ramp` that scales:
+  - enemy fire interval (x1.45 down to x0.7);
+  - missile frequency;
+  - bullet speed and aim cone;
+  - armor (+0..2) and burst length.
+- A per-mission `tune` dict (`fire`, `missiles`, `hp`) trims outliers.
+- `godot --headless --path . --script res://tests/difficulty.gd` flies every mission with a **rookie** autopilot (reacts every 9 frames, sloppy aim, late dodges, forgets flares) and prints armor lost per minute. Keep it rising mission to mission; chapter finales may spike. After this tuning (2026-10-15) it runs 4, 9, 9, 10, 13, 14, 18, 19, 19, 25, 21, 24, 24, 28, 32.
+- Modern missions have `enemy_flares` (chance per missile), and the BVR duel has `missile_regen`.
+
 ## Sound
 - `python3 tools/make_audio.py` regenerates `audio/` in about 8 s. It uses the stdlib synth in `tools/synth.py`, shared with Sparkfrost and Cardboard. The output is:
   - sfx;

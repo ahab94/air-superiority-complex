@@ -169,6 +169,11 @@ var weapons_free := true     # ROE missions: false until the enemy fires first
 var roe_violations := 0
 var _roe_cool := 0.0
 var chain_up := false        # an AWACS is alive, so cloaked squadrons are hidden
+var damage_taken := 0        # armor lost (for the difficulty test)
+## Difficulty ramp, from the mission's "difficulty" (1 = first, 15 = last):
+## 0..1 here. Enemies fire more often and faster, aim better, carry more
+## armor and launch more missiles as it climbs.
+var ramp := 0.0
 ## Things that happened this step, for sound and effects. The game drains it.
 var events: Array = []
 
@@ -178,6 +183,7 @@ func _init(level_data: Dictionary, player_count := 1) -> void:
 	jet = Jets.get_jet(String(level.get("jet_id", "foxbrat")))
 	enemy_jet_id = String(level.get("enemy_jet", "fishbowl"))
 	rng.seed = int(level.get("seed", 1))
+	ramp = clampf((float(level.get("difficulty", 1)) - 1.0) / 14.0, 0.0, 1.0)
 	fuel = float(level.get("fuel", 100.0))
 	lives = int(level.get("lives", 3))
 	players = [_new_player(W * 0.5), _new_player(W * 0.5)]
@@ -376,6 +382,10 @@ func _update_player(i: int, input: Dictionary) -> void:
 		p.cooldown = gun
 		events.append({"e": "shoot", "i": i, "pos": muzzle})
 	_update_locks(i, bool(input.get("missile", false)))
+	# Missile resupply (the BVR duel): one missile every few seconds, up to a full load.
+	var regen: float = level.get("missile_regen", 0.0)
+	if regen > 0.0 and p.missiles < int(jet.missiles) and frame % int(regen * 60.0) == 0:
+		p.missiles += 1
 	p.flare_cd = maxf(0.0, p.flare_cd - DT)
 	if input.get("flare", false) and p.flare_cd <= 0.0:
 		_drop_flares(i)
@@ -465,6 +475,7 @@ func _damage_player(i: int, at: Vector2, amount := 1) -> void:
 	if not p.alive:
 		return
 	p.hp -= amount
+	damage_taken += amount
 	p.invuln = HIT_FLASH
 	if level.get("claims", false):
 		enemy_claims += amount
@@ -647,6 +658,13 @@ func _update_missiles() -> void:
 		if not engageable(pos):
 			events.append({"e": "roe", "pos": pos})   # rules of engagement: self-destruct at the river
 			continue
+		# Modern jets pop their own flares when a missile closes in.
+		if not target.is_empty() and not m.get("rolled", false) and pos.distance_to(target.pos) < 90.0:
+			m.rolled = true
+			if rng.randf() < float(level.get("enemy_flares", 0.0)):
+				events.append({"e": "enemy_flares", "pos": target.pos, "id": target.id})
+				events.append({"e": "emissile_gone", "pos": pos, "id": m.id})
+				continue
 		var hit := -1
 		for k in enemies.size():
 			var e: Dictionary = enemies[k]
@@ -815,7 +833,7 @@ func _update_enemy_fire() -> void:
 		if best.is_empty():
 			continue
 		g.shooter = best.id
-		g.burst = int(g.jet.burst)
+		g.burst = int(g.jet.burst) + int(ramp * 2.2)
 		g.burst_t = 0.0
 
 
@@ -922,13 +940,21 @@ func _fire_round(e: Dictionary) -> void:
 		from = Vector2(e.pos) + Vector2(0, -14)
 		if target.y > from.y - 20.0:
 			return
-		var up_ang := clampf(atan2(target.x - from.x, from.y - target.y), -MAX_AIM, MAX_AIM)
-		bombs.append({"pos": from, "vel": Vector2(sin(up_ang), -cos(up_ang)) * BOMB_SPEED})
+		var up_ang := clampf(atan2(target.x - from.x, from.y - target.y), -aim_limit(), aim_limit())
+		bombs.append({"pos": from, "vel": Vector2(sin(up_ang), -cos(up_ang)) * bomb_speed()})
 	else:
-		var ang := clampf(atan2(target.x - from.x, target.y - from.y), -MAX_AIM, MAX_AIM)
-		bombs.append({"pos": from, "vel": Vector2(sin(ang), cos(ang)) * BOMB_SPEED})
+		var ang := clampf(atan2(target.x - from.x, target.y - from.y), -aim_limit(), aim_limit())
+		bombs.append({"pos": from, "vel": Vector2(sin(ang), cos(ang)) * bomb_speed()})
 	_enemy_fired()
 	events.append({"e": "enemy_shoot", "pos": from, "id": e.id})
+
+
+func bomb_speed() -> float:
+	return BOMB_SPEED * lerpf(0.85, 1.18, ramp)
+
+
+func aim_limit() -> float:
+	return MAX_AIM * lerpf(0.7, 1.3, ramp)
 
 
 func _enemy_fired() -> void:
@@ -1093,6 +1119,7 @@ func _start_wave(n: int) -> void:
 		for p in players:
 			p.missiles = int(jet.missiles)
 		events.append({"e": "rearm"})
+	var tune: Dictionary = level.get("tune", {})   # per-mission difficulty trims
 	disguised = level.get("disguise", false)
 	weapons_free = not level.get("roe", false)
 	var list: Array = level.waves[n]
@@ -1108,16 +1135,16 @@ func _start_wave(n: int) -> void:
 			"move": String(spec.get("move", "weave")), "amp": float(spec.get("amp", 40.0)),
 			"freq": float(spec.get("freq", 0.8)), "phase": float(spec.get("phase", 0.0)),
 			"descent": float(spec.get("descent", 0.0 if level.has("bvr_line") else 2.5)), "delay": float(spec.get("delay", 0.0)),
-			"fire": float(spec.get("fire", ej.fire)), "fire_t": 0.0, "t": 0.0,
+			"fire": float(spec.get("fire", ej.fire)) * lerpf(1.45, 0.7, ramp) * float(tune.get("fire", 1.0)), "fire_t": 0.0, "t": 0.0,
 			"burst": 0, "burst_t": 0.0, "shooter": -1,
-			"missile_every": float(spec.get("missile_every", level.get("missile_every", ej.missile_every))),
+			"missile_every": float(spec.get("missile_every", level.get("missile_every", ej.missile_every))) * lerpf(1.5, 0.65, ramp) * float(tune.get("missiles", 1.0)),
 			# Missile clocks start part-charged so the first lock comes soon after arrival.
 			"missile_t": float(spec.get("missile_t", float(spec.get("missile_every", level.get("missile_every", ej.missile_every))) * 0.55)),
 			"rear": String(spec.get("from", "front")) == "behind", "ry": H + 140.0 + float(spec.get("delay", 0.0)) * 120.0,
 			"climb": float(spec.get("climb", REAR_CLIMB)), "lure": 0.0,
 		})
 		for off in SHAPES[spec.get("shape", "solo" if boss else "vic3")]:
-			var hp := Jets.enemy_hp(ej) + int(RANK_HP.get(kind, 0))
+			var hp := Jets.enemy_hp(ej) + int(RANK_HP.get(kind, 0)) + int(ramp * 2.5) + int(tune.get("hp", 0))
 			var e := {"id": next_id, "group": g, "off": off, "kind": kind, "hp": hp, "max_hp": hp,
 				"half": ej.hitbox, "boss": boss, "jet": jid,
 				"missiles": int(level.get("enemy_missiles", 1)), "pos": Vector2.ZERO}
@@ -1126,6 +1153,9 @@ func _start_wave(n: int) -> void:
 			for flag in ["awacs", "cloaked", "phantom"]:
 				if spec.get(flag, false):
 					e[flag] = true
+			# Stealth only exists alongside an AWACS in the same wave.
+			if e.get("cloaked", false) and not _wave_has_awacs(list):
+				e.cloaked = false
 			if spec.get("from", "") == "behind":
 				e.rear = true
 			if e.get("phantom", false):
@@ -1138,6 +1168,13 @@ func _start_wave(n: int) -> void:
 			enemies.append(e)
 			next_id += 1
 	events.append({"e": "wave", "n": n})
+
+
+static func _wave_has_awacs(list: Array) -> bool:
+	for spec in list:
+		if spec.get("awacs", false):
+			return true
+	return false
 
 
 ## Mid-mission defection (the contract was renegotiated).

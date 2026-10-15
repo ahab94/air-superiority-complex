@@ -24,7 +24,7 @@ const CHAPTERS := [
 const LIST := [
 	# ------------------------------------------------------------------ 1
 	{
-		"id": "foxbrat_express", "chapter": 0, "name": "Foxbrat Express", "year": 1976,
+		"id": "foxbrat_express", "difficulty": 1, "tune": {"fire": 1.35, "missiles": 1.3}, "chapter": 0, "name": "Foxbrat Express", "year": 1976,
 		"country": "Bearovia (allegedly)", "jet_id": "foxbrat", "enemy_jet": "fishbowl",
 		"terrain": "ocean", "light": "day", "weather": "none",
 		"quote": "So there I am, Bearovia, '76. Fastest jet on Earth, fuel tank of a lawnmower. And I just... keep flying east.",
@@ -55,7 +55,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 2
 	{
-		"id": "spy_in_the_sky", "chapter": 0, "name": "Spy-in-the-Sky", "year": 1960,
+		"id": "spy_in_the_sky", "difficulty": 2, "chapter": 0, "name": "Spy-in-the-Sky", "year": 1960,
 		"country": "Amerigo (officially: a weather agency)", "jet_id": "dragon_laddie", "enemy_jet": "fishbowl",
 		"terrain": "steppe", "light": "day", "weather": "none",
 		"quote": "No guns, no missiles, one camera. They told me nothing down there could reach that high. They told me a lot of things.",
@@ -65,13 +65,13 @@ const LIST := [
 		"bartender": "So the 'weather plane' took 400 photos of a missile factory.",
 		"fail": {"photos": "Lovely flight. Lovely clouds. Not one useful photo.", "shot_down": "Ace parachutes into a very awkward conversation."},
 		"goal": "survive", "duration": 70.0, "seed": 1960, "lives": 3,
-		"sams": {"every": 3.0, "range": 430.0, "shots": 1},
+		"sams": {"every": 2.9, "range": 430.0, "shots": 1},
 		"photos": {"count": 6, "need": 4, "every": 10.0, "start": 4.0},
 		"waves": [],
 	},
 	# ------------------------------------------------------------------ 3
 	{
-		"id": "butterknife_alley", "chapter": 0, "name": "Butterknife Alley", "year": 1951,
+		"id": "butterknife_alley", "difficulty": 3, "tune": {"fire": 0.7}, "chapter": 0, "name": "Butterknife Alley", "year": 1951,
 		"country": "Amerigo", "jet_id": "butterknife", "enemy_jet": "fishcake",
 		"terrain": "winter", "light": "overcast", "weather": "snow",
 		"quote": "Rule one: never cross the river. Rule two: they know rule one.",
@@ -102,7 +102,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 4
 	{
-		"id": "speed_check", "chapter": 0, "name": "Speed Check", "year": 1979,
+		"id": "speed_check", "difficulty": 4, "tune": {"fire": 1.6}, "chapter": 0, "name": "Speed Check", "year": 1979,
 		"country": "Amerigo", "jet_id": "blackbirb", "enemy_jet": "fishbowl",
 		"terrain": "desert", "light": "dusk", "weather": "dust",
 		"quote": "Some hotshot on the radio asks for a ground-speed check. So I ask for one too. Then I ask them to wait while I go faster.",
@@ -112,7 +112,7 @@ const LIST := [
 		"bartender": "Ground speed? You were sitting on that stool for an hour.",
 		"fail": {"shot_down": "Turns out you can be somewhere else too slowly."},
 		"goal": "survive", "duration": 60.0, "seed": 1979, "lives": 3,
-		"sams": {"every": 3.4, "range": 430.0, "shots": 1},
+		"sams": {"every": 4.4, "range": 430.0, "shots": 1},
 		"waves": [
 			[
 				{"shape": "pair", "kind": "C", "x": 150, "y": 130, "move": "weave", "amp": 80, "freq": 0.6, "fire": 3.4, "missile_every": 99.0},
@@ -122,7 +122,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 5
 	{
-		"id": "bear_necessities", "chapter": 0, "name": "Grin and Bear It", "year": 1985,
+		"id": "bear_necessities", "difficulty": 5, "tune": {"fire": 1.35}, "chapter": 0, "name": "Grin and Bear It", "year": 1985,
 		"country": "Amerigo", "jet_id": "pigeon", "enemy_jet": "fishbowl",
 		"terrain": "arctic", "light": "arctic", "weather": "snow",
 		"quote": "The Tuba Grizzly comes by every Tuesday. Usually you wave. This Tuesday it brought friends with guns.",
@@ -150,7 +150,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 6
 	{
-		"id": "five_in_a_minute", "chapter": 1, "name": "Five in a Minute", "year": 1965,
+		"id": "five_in_a_minute", "difficulty": 6, "tune": {"fire": 0.75}, "chapter": 1, "name": "Five in a Minute", "year": 1965,
 		"country": "Borderia", "enemy_country": "Bordaria", "jet_id": "butterknife", "enemy_jet": "hawkward",
 		"terrain": "plains", "light": "day", "weather": "dust",
 		"quote": "Monday I fly for Borderia. Tuesday for Bordaria. I don't take sides, I take cheques. This was a Monday.",
@@ -160,7 +160,7 @@ const LIST := [
 		"bartender": "Five in a minute. I've heard it's two. I've heard it's nine.",
 		"fail": {"overrun": "They overflew the airbase. The airbase has filed a complaint.", "shot_down": "Ace hits the silk. Both ministries claim him."},
 		"goal": "clear", "seed": 1965, "lives": 3, "claims": true,
-		"flak": {"every": 1.9, "radius": 30.0, "warn": 1.0, "dmg": 2, "spread": 70.0},
+		"flak": {"every": 1.6, "radius": 30.0, "warn": 1.0, "dmg": 2, "spread": 70.0},
 		"combo": {"window": 12.0, "need": 5, "bonus": 1500},
 		"waves": [
 			[
@@ -180,7 +180,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 7
 	{
-		"id": "midge_attack", "chapter": 1, "name": "Midge Attack", "year": 1971,
+		"id": "midge_attack", "difficulty": 7, "tune": {"fire": 0.45, "missiles": 0.6, "hp": 1}, "chapter": 1, "name": "Midge Attack", "year": 1971,
 		"country": "Bordaria", "enemy_country": "Borderia", "jet_id": "midge", "enemy_jet": "butterknife",
 		"terrain": "jungle", "light": "storm", "weather": "rain",
 		"quote": "Tuesday. Bordaria hands me a jet the size of a coffee table and points at the monsoon.",
@@ -212,7 +212,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 8
 	{
-		"id": "starfrighter", "chapter": 1, "name": "Starfrighter", "year": 1971,
+		"id": "starfrighter", "difficulty": 8, "tune": {"fire": 1.0}, "chapter": 1, "name": "Starfrighter", "year": 1971,
 		"country": "Bordaria", "enemy_country": "Borderia", "jet_id": "fishbowl", "enemy_jet": "starfrighter",
 		"terrain": "desert", "light": "night", "weather": "none",
 		"quote": "A night over the sand sea. Their Starfrighters carry more heat-seekers than sense. Bring flares.",
@@ -244,7 +244,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 9
 	{
-		"id": "coffee_two_sugars", "chapter": 1, "name": "Coffee, Two Sugars", "year": 2019,
+		"id": "coffee_two_sugars", "difficulty": 9, "tune": {"fire": 0.6, "missiles": 0.7}, "chapter": 1, "name": "Coffee, Two Sugars", "year": 2019,
 		"country": "Bordaria", "enemy_country": "Borderia", "jet_id": "fishbowl", "enemy_jet": "pigeon",
 		"terrain": "mountains", "light": "day", "weather": "snow",
 		"quote": "I'm flying wing for Squadron Leader Biscuit. Old jet, older jokes. The mountains are doing something to the air.",
@@ -275,7 +275,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 10
 	{
-		"id": "beyond_visual_reason", "chapter": 1, "name": "Beyond Visual Reason", "year": 2025,
+		"id": "beyond_visual_reason", "difficulty": 10, "tune": {"missiles": 0.27, "hp": 1}, "enemy_flares": 0.5, "missile_regen": 2.5, "chapter": 1, "name": "Beyond Visual Reason", "year": 2025,
 		"country": "Bordaria", "enemy_country": "Borderia", "jet_id": "raffle", "enemy_jet": "vigdragon",
 		"terrain": "plains", "light": "night", "weather": "none",
 		"quote": "The biggest air battle in decades and nobody crossed the line. Everybody fired across it. I flew for both sides. It was a long night.",
@@ -286,7 +286,7 @@ const LIST := [
 		"fail": {"shot_down": "Ace hits the silk. Both ministries issue a statement."},
 		"goal": "clear", "seed": 2025, "lives": 4, "claims": true,
 		"bvr_line": 300.0, "enemy_guns": false, "player_guns": false, "rearm_each_wave": true,
-		"enemy_missiles": 2, "missile_every": 3.2,
+		"enemy_missiles": 5, "missile_every": 3.2,
 		"switch": {"wave": 2, "jet_id": "vigdragon", "enemy_jet": "raffle",
 			"banner": "Contract renegotiated. Ace now flies for Borderia."},
 		"waves": [
@@ -309,7 +309,7 @@ const LIST := [
 		],
 	},	# ------------------------------------------------------------------ 11
 	{
-		"id": "operation_bowlo", "chapter": 2, "name": "Operation Bowl-o", "year": 1967,
+		"id": "operation_bowlo", "difficulty": 11, "tune": {"fire": 0.4, "missiles": 0.6, "hp": 1}, "chapter": 2, "name": "Operation Bowl-o", "year": 1967,
 		"country": "Amerigo", "jet_id": "fantom", "enemy_jet": "fishbowl",
 		"terrain": "jungle", "light": "day", "weather": "none",
 		"quote": "We copied the bombers' route, their radio chatter, their bad jokes. Then we waited for someone to fall for it.",
@@ -336,7 +336,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 12
 	{
-		"id": "ace_who_wasnt", "chapter": 2, "name": "The Ace Who Wasn't", "year": 1972,
+		"id": "ace_who_wasnt", "difficulty": 12, "tune": {"fire": 0.9}, "chapter": 2, "name": "The Ace Who Wasn't", "year": 1972,
 		"country": "Amerigo", "jet_id": "fantom", "enemy_jet": "fishbowl",
 		"terrain": "karst", "light": "overcast", "weather": "none",
 		"quote": "Everyone had a story about Colonel Nobody. Thirteen kills. No photo. No name. Flies out of the mist and vanishes back into it.",
@@ -364,7 +364,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 13
 	{
-		"id": "a_line_allegedly", "chapter": 2, "name": "A Line, Allegedly", "year": 1981,
+		"id": "a_line_allegedly", "difficulty": 13, "tune": {"fire": 0.85}, "chapter": 2, "name": "A Line, Allegedly", "year": 1981,
 		"country": "Amerigo", "jet_id": "tomkitten", "enemy_jet": "fitterbug",
 		"terrain": "ocean", "light": "dusk", "weather": "none",
 		"quote": "Somebody drew a line across the sea and called it a border. Our orders: fly right up to it, and don't shoot first.",
@@ -391,7 +391,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 14
 	{
-		"id": "sea_harrumph", "chapter": 2, "name": "Sea Harrumph", "year": 1982,
+		"id": "sea_harrumph", "difficulty": 14, "tune": {"fire": 0.9}, "chapter": 2, "name": "Sea Harrumph", "year": 1982,
 		"country": "Great Brollytain", "jet_id": "harrumph", "enemy_jet": "mirth",
 		"terrain": "ocean", "light": "storm", "weather": "rain",
 		"quote": "Eight thousand miles from home, in a jet that can stop in mid-air. Their jets were faster. They also came from behind.",
@@ -420,7 +420,7 @@ const LIST := [
 	},
 	# ------------------------------------------------------------------ 15
 	{
-		"id": "kill_chain", "chapter": 2, "name": "The Kill Chain", "year": 2026,
+		"id": "kill_chain", "difficulty": 15, "enemy_flares": 0.35, "chapter": 2, "name": "The Kill Chain", "year": 2026,
 		"country": "Amerigo", "jet_id": "eventually", "enemy_jet": "vigdragon",
 		"terrain": "cloudsea", "light": "day", "weather": "none",
 		"quote": "A: the radar plane sees you. B: its fighters hide in plain sight. C: you find out the hard way. Unless you break the chain at A.",
