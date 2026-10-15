@@ -307,5 +307,146 @@ const LIST := [
 				{"shape": "finger4", "kind": "A", "x": 280, "y": 230, "move": "weave", "amp": 100, "freq": 0.5, "phase": PI, "delay": 1.2},
 			],
 		],
+	},	# ------------------------------------------------------------------ 11
+	{
+		"id": "operation_bowlo", "chapter": 2, "name": "Operation Bowl-o", "year": 1967,
+		"country": "Amerigo", "jet_id": "fantom", "enemy_jet": "fishbowl",
+		"terrain": "jungle", "light": "day", "weather": "none",
+		"quote": "We copied the bombers' route, their radio chatter, their bad jokes. Then we waited for someone to fall for it.",
+		"goal_text": "You look like a slow bomber. They'll close in without firing: hold fire until they're close, then open up for double points. Shoot too early and the trick is wasted.",
+		"new": "Disguise: lure them in, then ambush",
+		"real_story": "In 1967 a fighter wing flew a mission copying the routes, speeds and radio calls of slower bombers, so enemy fighters would climb up expecting easy prey. They met fighters instead.",
+		"bartender": "So you dressed up as a bomber. On purpose.",
+		"fail": {"overrun": "They got so close they could read your fake call sign.", "shot_down": "The disguise worked a bit too well."},
+		"goal": "clear", "seed": 1967, "lives": 3, "disguise": true,
+		"waves": [
+			[
+				{"shape": "vic3", "kind": "C", "x": 150, "y": 110, "move": "weave", "amp": 50, "freq": 0.7},
+				{"shape": "vic3", "kind": "C", "x": 330, "y": 110, "move": "weave", "amp": 50, "freq": 0.7, "phase": PI, "delay": 0.4},
+			],
+			[
+				{"shape": "finger4", "kind": "B", "x": 200, "y": 110, "move": "figure8", "amp": 90, "freq": 0.5},
+				{"shape": "pair", "kind": "B", "x": 330, "y": 170, "move": "weave", "amp": 70, "freq": 0.8, "delay": 0.8},
+			],
+			[
+				{"shape": "vic5", "kind": "A", "x": 240, "y": 100, "move": "weave", "amp": 110, "freq": 0.45},
+				{"shape": "pair", "kind": "A", "x": 240, "y": 190, "move": "weave", "amp": 150, "freq": 0.6, "delay": 1.0},
+			],
+		],
+	},
+	# ------------------------------------------------------------------ 12
+	{
+		"id": "ace_who_wasnt", "chapter": 2, "name": "The Ace Who Wasn't", "year": 1972,
+		"country": "Amerigo", "jet_id": "fantom", "enemy_jet": "fishbowl",
+		"terrain": "karst", "light": "overcast", "weather": "none",
+		"quote": "Everyone had a story about Colonel Nobody. Thirteen kills. No photo. No name. Flies out of the mist and vanishes back into it.",
+		"goal_text": "Colonel Nobody blinks in and out of existence. He can only be hit while he's solid. Clear his wingmen, then pin him down.",
+		"new": "A phantom ace who fades in and out",
+		"real_story": "During one long war, pilots told stories of a legendary enemy ace with a dozen kills. Historians later concluded he was probably a composite of several pilots, or never existed at all.",
+		"bartender": "You shot down a pilot who didn't exist?",
+		"fail": {"overrun": "They vanished into the mist. Very on brand.", "shot_down": "Shot down by a rumour. Embarrassing."},
+		"goal": "clear", "seed": 1972, "lives": 3,
+		"waves": [
+			[
+				{"shape": "vic3", "kind": "C", "x": 160, "y": 140, "move": "weave", "amp": 60, "freq": 0.7},
+				{"shape": "vic3", "kind": "C", "x": 320, "y": 200, "move": "weave", "amp": 60, "freq": 0.7, "phase": PI, "delay": 0.5},
+			],
+			[
+				{"shape": "finger4", "kind": "B", "x": 220, "y": 130, "move": "figure8", "amp": 100, "freq": 0.5},
+				{"shape": "solo", "kind": "A", "x": 240, "y": 230, "move": "weave", "amp": 120, "freq": 0.6, "phantom": true, "fire": 1.4, "delay": 1.0},
+			],
+			[
+				{"shape": "solo", "kind": "A", "x": 240, "y": 170, "move": "figure8", "amp": 140, "freq": 0.5, "phantom": true, "fire": 1.1},
+				{"shape": "pair", "kind": "B", "x": 150, "y": 260, "move": "weave", "amp": 60, "freq": 0.9, "delay": 1.5},
+				{"shape": "pair", "kind": "B", "x": 330, "y": 260, "move": "weave", "amp": 60, "freq": 0.9, "phase": PI, "delay": 2.0},
+			],
+		],
+	},
+	# ------------------------------------------------------------------ 13
+	{
+		"id": "a_line_allegedly", "chapter": 2, "name": "A Line, Allegedly", "year": 1981,
+		"country": "Amerigo", "jet_id": "tomkitten", "enemy_jet": "fitterbug",
+		"terrain": "ocean", "light": "dusk", "weather": "none",
+		"quote": "Somebody drew a line across the sea and called it a border. Our orders: fly right up to it, and don't shoot first.",
+		"goal_text": "Rules of engagement: WEAPONS HOLD until they fire first. Then it's fair game. Shoot early three times and you're court-martialled.",
+		"new": "Rules of engagement: they must fire first",
+		"real_story": "In 1981 a coastal state claimed a line far out at sea as its border. When two of its jets fired on patrolling carrier fighters, the fighters shot both down within about a minute.",
+		"bartender": "They shot first? At you? Bold.",
+		"fail": {"roe": "Court-martialled. You fired first. Three times.", "overrun": "They crossed the line. Then crossed you.", "shot_down": "Shot down while politely waiting your turn."},
+		"goal": "clear", "seed": 1981, "lives": 3, "roe": true,
+		"waves": [
+			[
+				{"shape": "pair", "kind": "C", "x": 180, "y": 150, "move": "weave", "amp": 60, "freq": 0.6},
+				{"shape": "pair", "kind": "C", "x": 320, "y": 190, "move": "weave", "amp": 60, "freq": 0.6, "phase": PI, "delay": 0.4},
+			],
+			[
+				{"shape": "vic3", "kind": "B", "x": 160, "y": 140, "move": "weave", "amp": 70, "freq": 0.6},
+				{"shape": "vic3", "kind": "B", "x": 320, "y": 200, "move": "weave", "amp": 70, "freq": 0.6, "phase": PI, "delay": 0.6},
+			],
+			[
+				{"shape": "finger4", "kind": "A", "x": 200, "y": 140, "move": "figure8", "amp": 100, "freq": 0.5},
+				{"shape": "pair", "kind": "A", "x": 300, "y": 230, "move": "weave", "amp": 90, "freq": 0.7, "delay": 1.0},
+			],
+		],
+	},
+	# ------------------------------------------------------------------ 14
+	{
+		"id": "sea_harrumph", "chapter": 2, "name": "Sea Harrumph", "year": 1982,
+		"country": "Great Brollytain", "jet_id": "harrumph", "enemy_jet": "mirth",
+		"terrain": "ocean", "light": "storm", "weather": "rain",
+		"quote": "Eight thousand miles from home, in a jet that can stop in mid-air. Their jets were faster. They also came from behind.",
+		"goal_text": "Some squadrons climb up from BEHIND and shoot forward. Pull back (S / Down) to air-brake: they overshoot into your guns.",
+		"new": "Attacks from behind; air-brake to make them overshoot",
+		"real_story": "In 1982 small jump-jet fighters flying from carriers fought faster jets a very long way from home, and won almost every encounter. The famous trick of braking in mid-air to make a chaser overshoot was mostly a legend: their missiles did the work.",
+		"bartender": "You stopped. In the air. And they just flew past?",
+		"fail": {"overrun": "They flew past. Then kept flying past.", "shot_down": "Ace parachutes into the South Atlantic. In winter."},
+		"goal": "clear", "seed": 1982, "lives": 3,
+		"wind": {"base": 0.0, "gust": 40.0, "period": 6.0, "turb": 20.0},
+		"waves": [
+			[
+				{"shape": "vic3", "kind": "C", "x": 240, "y": 140, "move": "weave", "amp": 80, "freq": 0.6},
+				{"shape": "pair", "kind": "C", "x": 160, "y": 0, "move": "weave", "amp": 50, "freq": 0.8, "from": "behind", "delay": 2.0},
+			],
+			[
+				{"shape": "pair", "kind": "B", "x": 320, "y": 0, "move": "weave", "amp": 60, "freq": 0.8, "from": "behind"},
+				{"shape": "pair", "kind": "B", "x": 150, "y": 0, "move": "weave", "amp": 60, "freq": 0.8, "from": "behind", "delay": 2.5},
+				{"shape": "vic3", "kind": "B", "x": 240, "y": 150, "move": "figure8", "amp": 90, "freq": 0.5, "delay": 1.0},
+			],
+			[
+				{"shape": "vic3", "kind": "A", "x": 240, "y": 0, "move": "weave", "amp": 70, "freq": 0.6, "from": "behind"},
+				{"shape": "finger4", "kind": "A", "x": 220, "y": 140, "move": "weave", "amp": 90, "freq": 0.5, "delay": 1.5},
+			],
+		],
+	},
+	# ------------------------------------------------------------------ 15
+	{
+		"id": "kill_chain", "chapter": 2, "name": "The Kill Chain", "year": 2026,
+		"country": "Amerigo", "jet_id": "eventually", "enemy_jet": "vigdragon",
+		"terrain": "cloudsea", "light": "day", "weather": "none",
+		"quote": "A: the radar plane sees you. B: its fighters hide in plain sight. C: you find out the hard way. Unless you break the chain at A.",
+		"goal_text": "Big Ear radar planes keep their fighters cloaked: shimmering, untouchable, and still shooting. Bring down every Big Ear to unveil them.",
+		"new": "The kill chain: shoot the AWACS to unveil stealth fighters",
+		"real_story": "Modern air forces fight as networks. A radar plane far behind the front spots targets and passes them to fighters that keep their own radars silent, so they stay hidden until they fire. Break the first link of the chain and the rest go blind.",
+		"bartender": "You shot the guy with the binoculars? That's... actually smart.",
+		"fail": {"overrun": "Unseen, unstopped, and now, unbothered.", "shot_down": "Shot down by someone you never saw. Classic."},
+		"goal": "clear", "seed": 2026, "lives": 4, "max_bombs": 32,
+		"waves": [
+			[
+				{"shape": "solo", "kind": "A", "x": 240, "y": 90, "move": "weave", "amp": 90, "freq": 0.35, "jet": "bigear", "awacs": true, "descent": 0.5},
+				{"shape": "pair", "kind": "C", "x": 160, "y": 200, "move": "weave", "amp": 70, "freq": 0.7, "cloaked": true, "delay": 0.6},
+				{"shape": "pair", "kind": "C", "x": 320, "y": 230, "move": "weave", "amp": 70, "freq": 0.7, "phase": PI, "cloaked": true, "delay": 1.0},
+			],
+			[
+				{"shape": "solo", "kind": "A", "x": 130, "y": 90, "move": "weave", "amp": 60, "freq": 0.4, "jet": "bigear", "awacs": true, "descent": 0.5},
+				{"shape": "solo", "kind": "A", "x": 350, "y": 110, "move": "weave", "amp": 60, "freq": 0.4, "phase": PI, "jet": "bigear", "awacs": true, "descent": 0.5, "delay": 0.5},
+				{"shape": "vic3", "kind": "B", "x": 240, "y": 210, "move": "figure8", "amp": 100, "freq": 0.5, "cloaked": true, "delay": 1.0},
+				{"shape": "pair", "kind": "B", "x": 240, "y": 280, "move": "weave", "amp": 140, "freq": 0.6, "delay": 1.5},
+			],
+			[
+				{"shape": "solo", "kind": "A", "x": 240, "y": 80, "move": "weave", "amp": 110, "freq": 0.3, "jet": "bigear", "awacs": true, "descent": 0.4},
+				{"shape": "finger4", "kind": "A", "x": 200, "y": 190, "move": "figure8", "amp": 100, "freq": 0.5, "cloaked": true, "delay": 0.8},
+				{"shape": "finger4", "kind": "A", "x": 290, "y": 260, "move": "weave", "amp": 90, "freq": 0.55, "phase": 2.0, "cloaked": true, "delay": 1.4},
+			],
+		],
 	},
 ]

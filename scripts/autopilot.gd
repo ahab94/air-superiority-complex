@@ -102,10 +102,18 @@ func decide(sim, i: int) -> Dictionary:
 	if closest < 200.0 and float(p.flare_cd) <= 0.0 and not reckless:
 		out.flare = true
 
-	if sim.phase == "fight" and armed and not reckless:
+	# Patience: under weapons-hold, wait for them to shoot first; in disguise,
+	# let them get close before springing the ambush.
+	var hold: bool = sim.level.get("roe", false) and not sim.weapons_free
+	if sim.disguised:
+		var low := 0.0
+		for e in sim.enemies:
+			low = maxf(low, Vector2(e.pos).y)
+		hold = hold or low < 330.0
+	if sim.phase == "fight" and armed and not reckless and not hold:
 		if float(jet.gun) > 0.0 and sim.level.get("player_guns", true) and not sim.cloud_between(pos.x, pos.y - 20.0, 0.0):
 			for e in sim.enemies:
-				if sim.engageable(e.pos) and absf(_lead(sim, pos, e).x - pos.x) < Vector2(e.half).x - 2.0:
+				if sim.engageable(e.pos) and sim.hittable(e) and absf(_lead(sim, pos, e).x - pos.x) < Vector2(e.half).x - 2.0:
 					out.fire = true
 					break
 		out.missile = _missile_plan(sim, i, p)
@@ -149,9 +157,9 @@ func _missile_plan(sim, i: int, p: Dictionary) -> bool:
 	var formed := 0
 	var boss := false
 	for e in sim.enemies:
-		if Vector2(e.pos).y > 40.0 and sim.engageable(e.pos):
+		if Vector2(e.pos).y > 40.0 and sim.engageable(e.pos) and sim.hittable(e):
 			formed += 1
-			boss = boss or e.boss
+			boss = boss or e.boss or e.get("awacs", false) or e.get("phantom", false)
 	var hurt: bool = sim.damage(p) > 0.5
 	var plenty: bool = int(p.missiles) > 4 or not sim.level.get("player_guns", true)
 	if formed >= 9 or (boss and formed >= 1) or (hurt and formed >= 3) or (plenty and formed >= 2):
@@ -167,9 +175,13 @@ func _pick_target(sim, pos: Vector2, mate_pos: Vector2):
 	var best_cost := INF
 	for e in sim.enemies:
 		var ep: Vector2 = e.pos
-		if ep.y < 20.0 or not sim.engageable(ep):
+		if ep.y < 20.0 or not sim.engageable(ep) or not sim.hittable(e):
 			continue
 		var cost := absf(ep.x - pos.x) + (Sim.OVERRUN_Y - ep.y) * 0.5 + minf(float(e.hp), 12.0) * 6.0
+		if e.get("awacs", false):
+			cost -= 400.0           # break the kill chain first
+		if e.get("rear", false) and ep.y > pos.y:
+			cost += 500.0           # still behind us: can't shoot backwards
 		cost += maxf(0.0, absf(ep.x - pos.x) - absf(ep.x - mate_pos.x)) * 0.8
 		if sim.cloud_between(ep.x, Sim.PLAYER_Y - 20.0, ep.y):
 			cost += 80.0

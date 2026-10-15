@@ -27,6 +27,13 @@ extends RefCounted
 ##   combo       {window, need, bonus}: "five in a minute"
 ##   tea         being shot down means steering your parachute home
 ##   switch      {wave, jet_id, enemy_jet, banner}: change sides mid-mission
+##   disguise    each wave you look like a slow bomber: enemies close in without
+##               firing until you shoot (then a few seconds of double points)
+##   roe         weapons hold until the enemy fires first; 3 violations = court martial
+##   squadron flags: "from": "behind" (climbs up from below and shoots forward),
+##               "awacs" (a radar plane), "cloaked" (stealthy while any AWACS
+##               lives: can't be hit or locked, still shoots), "phantom" (an ace
+##               that blinks in and out of existence)
 
 const Jets := preload("res://scripts/jets.gd")
 
@@ -91,6 +98,13 @@ const HEAT_DOWN := 0.2
 const OVERHEAT_TIME := 2.5
 
 const PHOTO_RADIUS := Vector2(34, 28)
+const AMBUSH_TIME := 3.0            # double points after dropping the disguise
+const LURE_SPEED := 30.0            # how fast fooled squadrons close in (px/s)
+const LURE_MAX := 230.0
+const REAR_CLIMB := 120.0           # px/s attackers from behind climb past us
+const BRAKE_BONUS := 190.0          # ...plus this much while we pull back (they overshoot)
+const ROE_LIMIT := 3
+const SPECIAL_POINTS := {"awacs": 1000, "phantom": 1500}
 
 ## Squadron shapes, as offsets from the leader. They face down the screen,
 ## so the leader is at the front (lowest) and the others trail behind (up).
@@ -149,6 +163,12 @@ var _flak_t := 0.0
 var _site_t := 0.0
 var _target_t := 0.0
 var _targets_made := 0
+var disguised := false       # disguise missions: still looking like a bomber
+var ambush_t := 0.0
+var weapons_free := true     # ROE missions: false until the enemy fires first
+var roe_violations := 0
+var _roe_cool := 0.0
+var chain_up := false        # an AWACS is alive, so cloaked squadrons are hidden
 ## Things that happened this step, for sound and effects. The game drains it.
 var events: Array = []
 
@@ -345,6 +365,9 @@ func _update_player(i: int, input: Dictionary) -> void:
 	p.cooldown = maxf(0.0, p.cooldown - DT)
 	p.invuln = maxf(0.0, p.invuln - DT)
 	var gun: float = jet.gun if level.get("player_guns", true) else 0.0
+	var trigger: bool = input.get("fire", false) or (input.get("missile", false) and p.missiles > 0)
+	if trigger and phase == "fight":
+		_trigger_pulled(i)
 	if gun > 0.0 and input.get("fire", false) and p.cooldown <= 0.0 and phase == "fight":
 		# Twin cannons fire alternately from either side of the nose.
 		p.barrel = -p.barrel
@@ -358,13 +381,38 @@ func _update_player(i: int, input: Dictionary) -> void:
 		_drop_flares(i)
 
 
+## Pulling the trigger drops a disguise, and (under rules of engagement)
+## counts as a violation if the enemy hasn't fired yet.
+func _trigger_pulled(i: int) -> void:
+	if disguised:
+		disguised = false
+		ambush_t = AMBUSH_TIME
+		events.append({"e": "reveal", "i": i, "pos": players[i].pos})
+	if level.get("roe", false) and not weapons_free and _roe_cool <= 0.0:
+		roe_violations += 1
+		_roe_cool = 1.5
+		events.append({"e": "roe_violation", "i": i, "pos": players[i].pos, "n": roe_violations})
+		if roe_violations >= ROE_LIMIT:
+			_end("lose", "roe")
+
+
+## Can this enemy be shot, locked or rammed by a missile right now?
+func hittable(e: Dictionary) -> bool:
+	if e.get("phantom", false) and e.get("ghost", false):
+		return false
+	if e.get("cloaked", false) and chain_up:
+		return false
+	return true
+
+
 ## Hold the missile button: the radar locks the nearest targets one at a
 ## time (up to the jet's lock limit). Let go: one missile per lock.
 func _update_locks(i: int, held: bool) -> void:
 	var p: Dictionary = players[i]
 	var locks: Array = p.locks
 	for id in locks.duplicate():
-		if _find(id).is_empty():
+		var le := _find(id)
+		if le.is_empty() or not hittable(le):
 			locks.erase(id)
 	if held and phase == "fight":
 		if locks.size() < int(jet.locks) and locks.size() < p.missiles:
@@ -375,7 +423,7 @@ func _update_locks(i: int, held: bool) -> void:
 				var pos: Vector2 = p.pos
 				for e in enemies:
 					var ep: Vector2 = e.pos
-					if ep.y < 30.0 or ep.y > pos.y or locks.has(e.id) or _targeted(e.id) or not engageable(ep):
+					if ep.y < 30.0 or ep.y > pos.y or locks.has(e.id) or _targeted(e.id) or not engageable(ep) or not hittable(e):
 						continue
 					var d := pos.distance_to(ep)
 					if d < best_d:
@@ -547,6 +595,8 @@ func _update_shots() -> void:
 		var hit := -1
 		for k in enemies.size():
 			var e: Dictionary = enemies[k]
+			if not hittable(e):
+				continue                # stealthy or a ghost: the round passes through
 			var ep: Vector2 = e.pos
 			var half: Vector2 = e.half
 			if absf(ep.x - to.x) < half.x and to.y < ep.y + half.y and from.y > ep.y - half.y:
@@ -574,11 +624,13 @@ func _update_missiles() -> void:
 		var vel: Vector2 = m.vel
 		var pos: Vector2 = m.pos
 		var target := _find(m.target)
+		if not target.is_empty() and not hittable(target):
+			target = {}
 		if target.is_empty() and not enemies.is_empty():
 			var best_d := INF
 			for e in enemies:
 				var d := pos.distance_to(e.pos)
-				if d < best_d and engageable(e.pos):
+				if d < best_d and engageable(e.pos) and hittable(e):
 					best_d = d
 					target = e
 			if not target.is_empty():
@@ -598,13 +650,13 @@ func _update_missiles() -> void:
 		var hit := -1
 		for k in enemies.size():
 			var e: Dictionary = enemies[k]
-			if pos.distance_to(e.pos) < MISSILE_HIT + Vector2(e.half).x * 0.5:
+			if hittable(e) and pos.distance_to(e.pos) < MISSILE_HIT + Vector2(e.half).x * 0.5:
 				hit = k
 				break
 		if hit >= 0:
 			var e: Dictionary = enemies[hit]
 			events.append({"e": "missile_hit", "i": m.owner, "pos": pos, "id": e.id})
-			if e.boss and e.hp > BOSS_MISSILE_DMG:
+			if (e.boss or e.get("awacs", false) or e.get("phantom", false)) and e.hp > BOSS_MISSILE_DMG:
 				e.hp -= BOSS_MISSILE_DMG
 				events.append({"e": "hit", "i": m.owner, "pos": pos, "id": e.id, "hp": e.hp})
 			else:
@@ -620,7 +672,13 @@ func _kill(index: int, owner: int) -> void:
 	var e: Dictionary = enemies[index]
 	enemies.remove_at(index)
 	kills += 1
-	score += BOSS_POINTS if e.boss else int(POINTS.get(e.kind, 50))
+	var pts: int = BOSS_POINTS if e.boss else int(POINTS.get(e.kind, 50))
+	for k in SPECIAL_POINTS:
+		if e.get(k, false):
+			pts = SPECIAL_POINTS[k]
+	if ambush_t > 0.0:
+		pts *= 2
+	score += pts
 	if level.get("claims", false):
 		# The press office rounds up. Generously.
 		claims += 1 + rng.randi_range(0, 2) + (5 if e.boss else 0)
@@ -723,6 +781,8 @@ func _update_enemy_fire() -> void:
 	var cap := int(level.get("max_bombs", 28))
 	_update_enemy_locks()
 	var guns: bool = level.get("enemy_guns", true)
+	if disguised:
+		return                      # they think we're a lumbering bomber: no need to shoot yet
 	for gi in groups.size():
 		var g: Dictionary = groups[gi]
 		if not group_formed(g):
@@ -818,6 +878,7 @@ func _update_enemy_locks() -> void:
 		var dir := Vector2(0, 1) if not ground else (Vector2(players[l.target].pos) - from).normalized()
 		enemy_missiles.append({"id": next_id, "pos": from, "vel": dir * EMISSILE_SPEED0,
 			"target": l.target, "decoy": -1, "t": 0.0, "from_ground": ground})
+		_enemy_fired()
 		events.append({"e": "enemy_missile", "i": l.target, "pos": from, "id": next_id, "ground": ground})
 		next_id += 1
 	enemy_locks = keep
@@ -855,9 +916,25 @@ func _fire_round(e: Dictionary) -> void:
 		if p.active and p.alive and absf(p.pos.x - from.x) < nearest:
 			nearest = absf(p.pos.x - from.x)
 			target = p.pos
-	var ang := clampf(atan2(target.x - from.x, target.y - from.y), -MAX_AIM, MAX_AIM)
-	bombs.append({"pos": from, "vel": Vector2(sin(ang), cos(ang)) * BOMB_SPEED})
+	if e.get("rear", false):
+		# Attackers from behind face up the screen and fire forward (up),
+		# but only while we're still in front of them.
+		from = Vector2(e.pos) + Vector2(0, -14)
+		if target.y > from.y - 20.0:
+			return
+		var up_ang := clampf(atan2(target.x - from.x, from.y - target.y), -MAX_AIM, MAX_AIM)
+		bombs.append({"pos": from, "vel": Vector2(sin(up_ang), -cos(up_ang)) * BOMB_SPEED})
+	else:
+		var ang := clampf(atan2(target.x - from.x, target.y - from.y), -MAX_AIM, MAX_AIM)
+		bombs.append({"pos": from, "vel": Vector2(sin(ang), cos(ang)) * BOMB_SPEED})
+	_enemy_fired()
 	events.append({"e": "enemy_shoot", "pos": from, "id": e.id})
+
+
+func _enemy_fired() -> void:
+	if not weapons_free:
+		weapons_free = true
+		events.append({"e": "weapons_free"})
 
 
 # --- ground: flak, SAM sites, photo targets ----------------------------------
@@ -1016,6 +1093,8 @@ func _start_wave(n: int) -> void:
 		for p in players:
 			p.missiles = int(jet.missiles)
 		events.append({"e": "rearm"})
+	disguised = level.get("disguise", false)
+	weapons_free = not level.get("roe", false)
 	var list: Array = level.waves[n]
 	for g in list.size():
 		var spec: Dictionary = list[g]
@@ -1034,6 +1113,8 @@ func _start_wave(n: int) -> void:
 			"missile_every": float(spec.get("missile_every", level.get("missile_every", ej.missile_every))),
 			# Missile clocks start part-charged so the first lock comes soon after arrival.
 			"missile_t": float(spec.get("missile_t", float(spec.get("missile_every", level.get("missile_every", ej.missile_every))) * 0.55)),
+			"rear": String(spec.get("from", "front")) == "behind", "ry": H + 140.0 + float(spec.get("delay", 0.0)) * 120.0,
+			"climb": float(spec.get("climb", REAR_CLIMB)), "lure": 0.0,
 		})
 		for off in SHAPES[spec.get("shape", "solo" if boss else "vic3")]:
 			var hp := Jets.enemy_hp(ej) + int(RANK_HP.get(kind, 0))
@@ -1042,6 +1123,17 @@ func _start_wave(n: int) -> void:
 				"missiles": int(level.get("enemy_missiles", 1)), "pos": Vector2.ZERO}
 			if boss:
 				e.guns = [Vector2(-46, 6), Vector2(46, 6), Vector2(0, -36), Vector2(0, 40)]
+			for flag in ["awacs", "cloaked", "phantom"]:
+				if spec.get(flag, false):
+					e[flag] = true
+			if spec.get("from", "") == "behind":
+				e.rear = true
+			if e.get("phantom", false):
+				e.ghost = false
+				e.phase_t = 2.4
+				e.jump = Vector2.ZERO
+				e.hp = 14
+				e.max_hp = 14
 			e.pos = enemy_pos_in(e, 0.0)
 			enemies.append(e)
 			next_id += 1
@@ -1069,7 +1161,11 @@ func group_anchor(g: Dictionary, t: float) -> Vector2:
 	var entry := ENTRY_DIST * pow(1.0 - u, 3.0)
 	var flown := maxf(0.0, local - ENTRY_TIME)
 	var x: float = g.x
-	var y: float = g.y + float(g.descent) * flown - entry
+	var y: float = g.y + float(g.descent) * flown - entry + float(g.get("lure", 0.0))
+	if g.get("rear", false):
+		# Climbing up from behind: its height is integrated each step (it
+		# depends on our throttle), so forecast it at its current climb rate.
+		y = float(g.ry) - float(g.get("rate", g.climb)) * (t - float(g.t))
 	var a: float = g.freq * flown + float(g.phase)
 	match String(g.move):
 		"weave":
@@ -1084,7 +1180,9 @@ func group_anchor(g: Dictionary, t: float) -> Vector2:
 func enemy_pos_in(e: Dictionary, ahead: float) -> Vector2:
 	var g: Dictionary = groups[e.group]
 	var off: Vector2 = e.off
-	var p := group_anchor(g, float(g.t) + ahead) + off
+	if e.get("rear", false):
+		off.y = -off.y          # formation trails below the leader when climbing
+	var p := group_anchor(g, float(g.t) + ahead) + off + Vector2(e.get("jump", Vector2.ZERO))
 	if level.has("bvr_line"):
 		p.y = minf(p.y, float(level.bvr_line) - 20.0)
 	return Vector2(clampf(p.x, MARGIN, W - MARGIN), p.y)
@@ -1095,10 +1193,49 @@ func group_formed(g: Dictionary) -> bool:
 
 
 func _update_squadrons() -> void:
+	ambush_t = maxf(0.0, ambush_t - DT)
+	_roe_cool = maxf(0.0, _roe_cool - DT)
 	for g in groups:
 		g.t += DT
+		if disguised:
+			# Fooled: they close in on the "bomber" for an easy kill.
+			g.lure = minf(float(g.lure) + LURE_SPEED * DT, LURE_MAX)
+		if g.rear:
+			# Pulling back (air brake) makes them overshoot faster.
+			g.rate = float(g.climb) + maxf(0.0, -throttle) * BRAKE_BONUS
+			g.ry = float(g.ry) - float(g.rate) * DT
+			if float(g.ry) < -140.0:
+				g.ry = H + 140.0      # missed us: loop round for another pass
+	if disguised:
+		var low := 0.0
+		for e in enemies:
+			low = maxf(low, Vector2(e.pos).y)
+		# Too close for too long: they notice the "bomber" has guns.
+		for g in groups:
+			if float(g.lure) >= LURE_MAX and low > 430.0:
+				disguised = false
+				events.append({"e": "spotted"})
+				break
+	# The phantom ace: solid for a while, then fades out and reappears elsewhere.
+	for e in enemies:
+		if e.get("phantom", false):
+			e.phase_t -= DT
+			if e.phase_t <= 0.0:
+				e.ghost = not e.ghost
+				e.phase_t = 1.6 if e.ghost else 2.6
+				if not e.ghost:
+					e.jump = Vector2(rng.randf_range(-130.0, 130.0), rng.randf_range(-30.0, 90.0))
+				events.append({"e": "phantom", "ghost": e.ghost, "pos": e.pos, "id": e.id})
 	for e in enemies:
 		e.pos = enemy_pos_in(e, 0.0)
+	# Kill chain: while any AWACS flies, cloaked squadrons stay hidden.
+	var up := false
+	for e in enemies:
+		if e.get("awacs", false):
+			up = true
+	if chain_up and not up:
+		events.append({"e": "unveil"})
+	chain_up = up
 
 
 func _update_waves() -> void:
@@ -1164,7 +1301,7 @@ func _check_lost() -> void:
 		return
 	if goal() != "survive":
 		for e in enemies:
-			if Vector2(e.pos).y + Vector2(e.half).y >= OVERRUN_Y:
+			if not e.get("rear", false) and Vector2(e.pos).y + Vector2(e.half).y >= OVERRUN_Y:
 				_end("lose", "overrun")
 				return
 	for p in players:

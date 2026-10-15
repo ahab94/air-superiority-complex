@@ -75,6 +75,12 @@ A satirical Space-Invaders-style shooter in Godot 4.7 (GDScript), and the third 
 - `scripts/jet_mesh.gd`: jets built in code with SurfaceTool from numbers in `MODELS`: fuselage loft, wings and fins as plates, intakes, canopy and nozzles.
   - **Each jet blends 2–3 jet types** (see the `blend` field in jets.gd).
   - Preview models with `godot --path . --resolution 1000x800 --script res://tools/jet_preview.gd -- --out=x.png`.
+- **Chapter 3 mechanics (sim.gd):**
+  - `disguise`: the players look like bombers. Enemies lure in and hold fire; the first trigger pull reveals (`ambush_t` gives double points), and lingering too long gets you `spotted`.
+  - `roe`: `weapons_free` turns true on the enemy's first shot. Trigger pulls before that are violations, and three lose the mission.
+  - Squadron flags: `from: behind` (climbs up from below and fires upward; the climb speeds up when the throttle is negative), `awacs` (`chain_up` while any is alive), `cloaked` (`hittable()` is false while `chain_up`), and `phantom` (alternates ghost and solid, jumps position).
+  - `hittable(e)` gates every shot, missile and lock.
+- **Stealth camo** (`shaders/stealth.gdshader`): screen-texture refraction. scene3d `_restealth` rebuilds the node when it toggles, because a live node ignored a runtime `cast_shadow` change and cloaked jets kept casting shadows.
 - `scripts/look3d.gd`: light presets (day, dusk, overcast, storm, night, arctic), terrain table, and the SAM site and photo target models.
 - `shaders/terrain.gdshader`: one shader for every land biome (steppe, winter, desert, arctic, plains, jungle, mountains). The mesh is raised for real relief. Town lights appear at night. The palette is sRGB, so it's converted to linear.
 - `scripts/fx3d.gd`: explosions, cannon impacts, wrecks tumbling into the sea with a splash, muzzle flashes, damage smoke and fire, and ribbon trails (vapour, missile smoke).

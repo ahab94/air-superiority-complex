@@ -35,12 +35,12 @@ func _init() -> void:
 	var kinds := JetMesh.MODELS.keys()
 	for k in kinds.size():
 		var top := JetMesh.make(kinds[k], skins[k % 2])
-		var s := 0.45 if kinds[k] == "tuba" else 1.0
+		var s := 0.45 if kinds[k] in ["tuba", "bigear"] else 1.0
 		top.scale = Vector3.ONE * s
-		top.position = Vector3(-10.0 + (k % 5) * 5.0, 0, -6.0 + (k / 5) * 5.5)
+		top.position = Vector3(-12.5 + (k % 6) * 5.0, 0, -8.0 + (k / 6) * 5.5)
 		root.add_child(top)
 	var cam := Camera3D.new()
-	cam.position = Vector3(0, 22, 0)
+	cam.position = Vector3(0, 29, 0)
 	cam.rotation = Vector3(-PI / 2, 0, 0)
 	cam.fov = 45
 	root.add_child(cam)

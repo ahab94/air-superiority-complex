@@ -34,6 +34,8 @@ const TERRAINS := {
 	"plains": {"biome": 5, "height": 0.0},
 	"jungle": {"biome": 6, "height": 1.5},
 	"mountains": {"biome": 7, "height": 16.0},
+	"cloudsea": {"biome": 8, "height": 5.0},
+	"karst": {"biome": 9, "height": 9.0},
 }
 
 

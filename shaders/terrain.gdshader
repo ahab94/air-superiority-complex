@@ -7,6 +7,8 @@
 //   5 plains     a grid of irrigated fields and canals, villages, roads
 //   6 jungle     dense rainforest canopy and a muddy river delta
 //   7 mountains  real height: rock ridges, snowfields, green valleys
+//   8 cloudsea   flying above a deck of clouds: billowing tops, a few gaps
+//   9 karst      limestone towers rising out of misty jungle
 // `scroll` slides the land toward the bottom of the screen as we fly.
 // The mesh is raised by height_amp, so mountains stand up toward the camera
 // and move with real parallax. At night, `lights` scatters town lights.
@@ -36,6 +38,13 @@ float height_at(vec2 p) {
 		// Ridged noise: sharp crests, wide valleys.
 		float r = 1.0 - abs(texture(noise_tex, p * 0.008 + 0.7).r * 2.0 - 1.0);
 		h = mix(h, r * r, 0.6);
+	} else if (biome == 9) {
+		// Karst: tall steep-sided towers poking out of flat ground.
+		float t = texture(noise_tex, p * 0.035 + 0.2).r;
+		h = 0.25 + smoothstep(0.5, 0.68, t) * (0.6 + texture(detail_tex, p * 0.05).r * 0.2);
+	} else if (biome == 8) {
+		// Billowing cloud tops.
+		h = texture(noise_tex, p * 0.012).r * 0.6 + texture(detail_tex, p * 0.04).r * 0.4;
 	}
 	return h;
 }
@@ -204,6 +213,20 @@ void fragment() {
 		float paddy = smoothstep(0.35, 0.4, river(p, 0.09)) * (1.0 - r);
 		vec2 f = fract(p * 0.15);
 		col = mix(col, mix(vec3(0.3, 0.42, 0.18), vec3(0.2, 0.3, 0.2), step(0.5, f.x)), paddy * 0.7);
+	} else if (biome == 8) {    // cloud sea
+		float gap = smoothstep(0.32, 0.27, texture(noise_tex, p * 0.004 + 0.6).r);
+		vec3 tops = mix(vec3(0.8, 0.83, 0.88), vec3(0.98, 0.98, 1.0), smoothstep(0.35, 0.75, hgt));
+		col = mix(tops, vec3(0.12, 0.22, 0.3), gap);   // through a gap: the sea, far below
+		rough = 1.0;
+	} else if (biome == 9) {    // karst
+		float slope = 1.0 - clamp(wn.y * 2.2 - 1.0, 0.0, 1.0);
+		vec3 jungle = mix(vec3(0.1, 0.24, 0.08), vec3(0.2, 0.34, 0.12), texture(detail_tex, p * 0.3).r);
+		vec3 rock = mix(vec3(0.66, 0.65, 0.6), vec3(0.45, 0.46, 0.42), grain);
+		col = mix(jungle, rock, slope);                     // green tops, grey cliffs
+		float r = river(p, 0.02);
+		col = mix(col, vec3(0.22, 0.32, 0.28), r);
+		rough = mix(rough, 0.2, r);
+		col = mix(col, vec3(0.8, 0.84, 0.86), (1.0 - smoothstep(0.26, 0.45, hgt)) * 0.25);   // mist in the valleys
 	} else if (biome == 7) {    // mountains
 		float slope = 1.0 - clamp(wn.y * 1.3 - 0.2, 0.0, 1.0);
 		vec3 valley = mix(vec3(0.24, 0.3, 0.16), vec3(0.36, 0.33, 0.22), n2);

@@ -23,6 +23,7 @@ const LAND := preload("res://shaders/land.gdshader")
 const RUNWAY := preload("res://shaders/runway.gdshader")
 const CLOUD := preload("res://shaders/cloud.gdshader")
 const TERRAIN := preload("res://shaders/terrain.gdshader")
+const STEALTH := preload("res://shaders/stealth.gdshader")
 const Look := preload("res://scripts/look3d.gd")
 
 const CAM_H := 90.0                   # camera height above the action plane
@@ -82,6 +83,8 @@ var _lightning := 0.0
 var _storm := false
 var _base_sun := 1.0
 var lightning_level := 0.0            # 0..1, read by the HUD for a screen flash
+var _stealth_mat: ShaderMaterial
+var _disguised_shown := false
 
 
 static func to3(p: Vector2, y := 0.0) -> Vector3:
@@ -445,6 +448,7 @@ func reset(sim) -> void:
 		d.clear()
 	apply_look(sim.level)
 	_make_players(sim.jet)
+	_disguised_shown = false
 	for d in [site_nodes, target_nodes]:
 		for id in d:
 			d[id].queue_free()
@@ -466,7 +470,7 @@ func reset(sim) -> void:
 
 
 ## (Re)build the players' jets for a jet type, with its own paint if it has one.
-func _make_players(jet: Dictionary) -> void:
+func _make_players(jet: Dictionary, disguise := false) -> void:
 	for p in players:
 		p.queue_free()
 	var ace: ShaderMaterial = skins.ace
@@ -475,9 +479,11 @@ func _make_players(jet: Dictionary) -> void:
 		var paint: Color = jet.paint
 		ace = JetMesh.skin(paint, paint.darkened(0.2), 0.0, Color(0.25, 0.5, 0.95), noise)
 		deuce = JetMesh.skin(paint.lightened(0.08), paint.darkened(0.25), 0.4, Color(0.4, 0.75, 0.25), noise)
-	players = [JetMesh.make(String(jet.shape), ace), JetMesh.make(String(jet.shape), deuce)]
+	# In disguise we look like a lumbering bomber (scaled to our own size).
+	var shape := "tuba" if disguise else String(jet.shape)
+	players = [JetMesh.make(shape, ace), JetMesh.make(shape, deuce)]
 	for p in players:
-		p.scale = Vector3.ONE * PLAYER_SCALE
+		p.scale = Vector3.ONE * PLAYER_SCALE * (0.42 if disguise else 1.0)
 		add_child(p)
 	_player_shape = String(jet.shape)
 	_player_skins = [ace, deuce]
@@ -550,6 +556,17 @@ func handle(e: Dictionary, sim) -> void:
 			fx.flak_burst(to3(p, 0.3))
 		"switch":
 			_make_players(sim.jet)
+		"reveal", "spotted":
+			# The disguise drops: a burst of panels and light as the bomber
+			# turns out to be a fighter.
+			for i in 2:
+				var pl: Dictionary = sim.players[i]
+				if pl.active and pl.alive:
+					fx.muzzle(to3(pl.pos, 0.6), true)
+					fx.impact(to3(pl.pos, 0.6))
+		"unveil":
+			for id in enemy_nodes:
+				fx.muzzle(enemy_nodes[id].position + Vector3(0, 0.5, 0), true)
 		"emissile_gone":
 			var p: Vector2 = e.pos
 			fx.impact(to3(p, 0.4))
@@ -716,6 +733,9 @@ func _engine_power(dmg: float, seed_: float) -> float:
 
 
 func _sync_players(sim, delta: float) -> void:
+	if bool(sim.disguised) != _disguised_shown:
+		_disguised_shown = sim.disguised
+		_make_players(sim.jet, _disguised_shown)
 	var landing: bool = sim.result == "win"
 	if landing:
 		land_t += delta
@@ -770,7 +790,8 @@ func _sync_enemies(sim, delta: float) -> void:
 		if not enemy_nodes.has(id):
 			var shape: String = Jets.get_jet(String(e.jet)).shape
 			node = JetMesh.make(shape, skins.get(e.kind, skins.C), 0.7)
-			node.scale = Vector3.ONE * ENEMY_SCALE * (1.3 if e.boss else 1.0)
+			node.scale = Vector3.ONE * ENEMY_SCALE * (1.3 if e.boss or e.get("awacs", false) else 1.0)
+			node.set_meta("hidden", false)
 			add_child(node)
 			node.position = target
 			node.set_meta("vel", Vector3.ZERO)
@@ -790,18 +811,70 @@ func _sync_enemies(sim, delta: float) -> void:
 		node.set_meta("vel", sm)
 		# Bank into turns so sideways motion reads as weaving.
 		var wob := _struggle(dmg, float(id), jolt)
-		node.rotation = Vector3(0, PI + clampf(sm.x * 0.04, -0.25, 0.25), clampf(sm.x * 0.12, -0.6, 0.6) + sin(_t * 1.7 + id) * 0.05) + wob
+		# Most face down the screen (toward us); attackers from behind face up.
+		var rear: bool = e.get("rear", false)
+		var yaw := 0.0 if rear else PI
+		node.rotation = Vector3(0, yaw + clampf(sm.x * 0.04, -0.25, 0.25), clampf(sm.x * (-0.12 if rear else 0.12), -0.6, 0.6) + sin(_t * 1.7 + id) * 0.05) + wob
 		_set_damage(node, dmg)
+		# Stealth: hidden jets (cloaked by an AWACS, or the phantom fading
+		# out) swap their paint for the refracting stealth material.
+		var hidden: bool = not sim.hittable(e)
+		if hidden != bool(node.get_meta("hidden")):
+			node = _restealth(id, e, hidden)
+			if not hidden:
+				fx.impact(node.position)
 		# Afterburners blaze while they dive in, then settle; damage makes them cough.
-		var burn := clampf(1.0 + sm.z * 0.05, 0.6, 3.0) * _engine_power(dmg, float(id))
+		var burn := clampf(1.0 + absf(sm.z) * 0.05, 0.6, 3.0) * _engine_power(dmg, float(id))
 		for f in node.get_children():
 			if f.name.begins_with("Flame"):
+				f.visible = not hidden
 				f.scale = Vector3(1.0, maxf(0.3, burn), 1.0)
 				(f.material_override as ShaderMaterial).set_shader_parameter("power", burn)
+			elif f.name == "Rotodome":
+				f.rotate_y(delta * 1.4)
 	for id in enemy_nodes.keys():
 		if not seen.has(id):
 			enemy_nodes[id].queue_free()
 			enemy_nodes.erase(id)
+
+
+## Swap a jet between its paint and stealth camo. The renderer doesn't pick
+## up a shadow-casting change on a live node (cloaked jets kept casting
+## shadows), so build a fresh node with the right setting before it enters
+## the scene, and carry over position, rotation and state.
+func _restealth(id: int, e: Dictionary, on: bool) -> Node3D:
+	var old: Node3D = enemy_nodes[id]
+	var shape: String = Jets.get_jet(String(e.jet)).shape
+	var node := JetMesh.make(shape, skins.get(e.kind, skins.C), 0.7)
+	node.transform = old.transform
+	for m in old.get_meta_list():
+		node.set_meta(m, old.get_meta(m))
+	_set_stealth(node, on, skins.get(e.kind, skins.C))
+	add_child(node)
+	old.queue_free()
+	enemy_nodes[id] = node
+	return node
+
+
+func _set_stealth(node: Node3D, on: bool, skin: ShaderMaterial) -> void:
+	if _stealth_mat == null:
+		_stealth_mat = ShaderMaterial.new()
+		_stealth_mat.shader = STEALTH
+	node.set_meta("hidden", on)
+	for c in node.get_children():
+		if c is MeshInstance3D and (c as MeshInstance3D).mesh is ArrayMesh:
+			var mi: MeshInstance3D = c
+			if on:
+				mi.set_surface_override_material(0, _stealth_mat)
+				mi.set_surface_override_material(1, _stealth_mat)
+			else:
+				mi.set_surface_override_material(0, skin)
+				mi.set_surface_override_material(1, JetMesh._glass())
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if on else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	if on:
+		for c in node.get_children():
+			if c is GeometryInstance3D:
+				(c as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 func _sync_bullets(sim) -> void:

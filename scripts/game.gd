@@ -424,6 +424,11 @@ func _event_sound(e: Dictionary) -> void:
 		"rescue": sound.play("rescue", -6.0)
 		"join": sound.play("join", -6.0)
 		"rearm": sound.play("lock_ok", -10.0)
+		"reveal", "spotted": sound.play("stamp", -4.0)
+		"weapons_free": sound.play("lock_ok", -6.0)
+		"roe_violation": sound.play("overheat", -6.0)
+		"unveil": sound.play("approach", -4.0)
+		"phantom": sound.play("pop", -14.0, 0.2, 0.7 if e.ghost else 1.3)
 
 
 const LOGGED := ["kill", "player_hit", "player_damaged", "missile", "lock", "enemy_lock", "enemy_missile",
@@ -476,6 +481,25 @@ func _consume_events() -> void:
 				_fx.append({"kind": "banner_small", "pos": Vector2(Sim.W / 2, 324), "t": 0.0, "life": 2.0, "text": "Landed on home soil. No coffee."})
 			"roe":
 				_fx.append({"kind": "points", "pos": e.pos, "t": 0.0, "life": 0.9, "text": "ROE: NO FIRE ACROSS"})
+			"wave":
+				if sim.disguised:
+					_banner("Disguised as a bomber", "Hold fire. Let them come close.")
+				elif sim.level.get("roe", false):
+					_banner("WEAPONS HOLD", "Don't fire until they do.")
+			"reveal":
+				_banner("AMBUSH!", "Double points for %d seconds" % int(Sim.AMBUSH_TIME))
+			"spotted":
+				_banner("They spotted the guns", "Disguise blown. Fight!")
+			"weapons_free":
+				_banner("WEAPONS FREE", "They fired first.")
+			"roe_violation":
+				_banner("ROE VIOLATION %d/%d" % [e.n, Sim.ROE_LIMIT], "You fired first. Command is not amused.")
+			"unveil":
+				_banner("CHAIN BROKEN", "Radar plane down: bandits unveiled!")
+			"phantom":
+				if not e.ghost:
+					var rumours := ["Thirteen kills. Allegedly.", "Some say he's three people.", "He was never here.", "Behind you. Or not.", "Nobody has seen his face. Including him."]
+					_fx.append({"kind": "banner_small", "pos": Vector2(Sim.W / 2, 340), "t": 0.0, "life": 1.8, "text": "Colonel Nobody: " + rumours[sim.frame % rumours.size()]})
 			"rescue":
 				_fx.append({"kind": "points", "pos": e.pos, "t": 0.0, "life": 1.0, "text": "RESCUE +250"})
 			"join":
@@ -485,6 +509,17 @@ func _consume_events() -> void:
 			"approach":
 				_fx.append({"kind": "banner", "pos": Vector2(Sim.W / 2, 300), "t": 0.0, "life": 2.0, "text": "Land on the strip"})
 	sim.events.clear()
+
+
+## A dark strip behind banner text so it reads over bright clouds and snow.
+func _banner_back(text: String, size: float, y: float, a: float) -> void:
+	var w := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(size * _fs)).x / _fs + 24.0
+	draw_rect(Rect2(Sim.W / 2 - w / 2, y - size * 0.95, w, size * 1.3), Color(0.02, 0.04, 0.08, 0.55 * a))
+
+
+func _banner(big: String, small: String) -> void:
+	_fx.append({"kind": "banner", "pos": Vector2(Sim.W / 2, 300), "t": 0.0, "life": 2.2, "text": big})
+	_fx.append({"kind": "banner_small", "pos": Vector2(Sim.W / 2, 324), "t": 0.0, "life": 2.2, "text": small})
 
 
 func _update_fx(delta: float) -> void:
@@ -739,9 +774,11 @@ func _draw_fx(f: Dictionary) -> void:
 			_text(pos + Vector2(-40, -14 - 20 * k), f.text, 11, Color(Art.GOLD, 1.0 - k), HORIZONTAL_ALIGNMENT_CENTER, 80)
 		"banner_small":
 			var a := clampf(minf(f.t * 4.0, (f.life - f.t) * 3.0), 0.0, 1.0)
+			_banner_back(f.text, 12, pos.y, a)
 			_text(Vector2(0, pos.y), f.text, 12, Color(Art.HUD_TEXT, a), HORIZONTAL_ALIGNMENT_CENTER, Sim.W)
 		"banner":
 			var a := clampf(minf(f.t * 4.0, (f.life - f.t) * 3.0), 0.0, 1.0)
+			_banner_back(f.text, 22, pos.y, a)
 			_text(Vector2(0, pos.y), f.text, 22, Color(Art.HUD_TEXT, a), HORIZONTAL_ALIGNMENT_CENTER, Sim.W)
 
 
@@ -780,6 +817,36 @@ func _draw_hud() -> void:
 			elif not lv.waves.is_empty():
 				obj = "WAVE %d/%d" % [sim.wave + 1, lv.waves.size()]
 	_text(Vector2(16, 42), obj, 11, Color(Art.HUD_TEXT, 0.9))
+	# Mission-rule status, just under the objective.
+	var status := ""
+	var scol := Color(Art.HUD_TEXT, 0.9)
+	if sim.disguised:
+		status = "DISGUISED: hold fire until they're close"
+		scol = Color("9fe1cb")
+	elif sim.ambush_t > 0.0:
+		status = "AMBUSH: double points"
+		scol = Art.GOLD
+	elif lv.get("roe", false) and sim.phase == "fight":
+		status = ("WEAPONS FREE" if sim.weapons_free else "WEAPONS HOLD") + "   violations %d/%d" % [sim.roe_violations, Sim.ROE_LIMIT]
+		scol = Color("9fe1cb") if sim.weapons_free else (Color("ff4a3a") if fmod(_t, 0.6) < 0.4 else Color(1, 0.6, 0.5))
+	elif sim.chain_up:
+		var n := 0
+		for en in sim.enemies:
+			if en.get("awacs", false):
+				n += 1
+		status = "KILL CHAIN: %d radar plane%s up, bandits CLOAKED" % [n, "" if n == 1 else "s"]
+		scol = Color(0.65, 0.9, 1.0)
+	if status != "":
+		var sw := _font.get_string_size(status, HORIZONTAL_ALIGNMENT_LEFT, -1, int(10 * _fs)).x / _fs
+		draw_rect(Rect2(10, 48, sw + 12, 15), Color(0.02, 0.04, 0.08, 0.6))
+		_text(Vector2(16, 59), status, 10, scol)
+	# Attackers coming up from behind.
+	for en in sim.enemies:
+		if en.get("rear", false):
+			var ep: Vector2 = en.pos
+			if ep.y > Sim.PLAYER_ZONE_TOP - 10.0 and ep.y < Sim.H + 60.0 and fmod(_t, 0.4) < 0.25:
+				_text(Vector2(0, Sim.H - 46), "SIX O'CLOCK!  Pull back to brake", 11, Color("ff4a3a"), HORIZONTAL_ALIGNMENT_CENTER, Sim.W)
+				break
 	if lv.get("claims", false):
 		_text(Vector2(Sim.W - 290, 42), "KILLS %d · CLAIMED %d" % [sim.kills, sim.claims], 11, Art.GOLD, HORIZONTAL_ALIGNMENT_RIGHT, 280)
 	if lv.has("wind"):

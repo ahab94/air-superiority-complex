@@ -71,7 +71,7 @@ Every jet is fictional, and every name is a parody. Like the aircraft in big ope
 | Dassalt Raffle | Dassalt | Every ticket's a winner |
 | C-01J Mildly Vigorous Dragon | Dragonia Aero | Some assembly required |
 
-## Missions: 10 built (of 20 planned)
+## Missions: 15 built (of 20 planned)
 
 Each mission has its own terrain, weather, jets and a rule that comes from its setting.
 
@@ -88,9 +88,19 @@ Each mission has its own terrain, weather, jets and a rule that comes from its s
 | 9 | Coffee, Two Sugars (2019) | High mountains with real relief; snow | Fishbowl (Bordaria) → Fighting Pigeons | Turbulence; steer your parachute home, or you're staying for coffee |
 | 10 | Beyond Visual Reason (2025) | Night plains, town lights | Raffle ⇄ Vigorous Dragon | Missiles only across the Line; Ace switches sides at halftime |
 
+**Chapter 3: Greatest Hits**
+
+| # | Mission | Terrain, light, weather | You fly → against | Setting's effect |
+|---|---|---|---|---|
+| 11 | Operation Bowl-o (1967) | Jungle; day | FN-4 Fantom → Fishbowls | **Disguise:** you look like a slow bomber, so they close in without firing. Ambush them for double points |
+| 12 | The Ace Who Wasn't (1972) | Misty karst hills; overcast | Fantom → Colonel Nobody | **A phantom ace** who blinks in and out; you can only hit him while he's solid |
+| 13 | A Line, Allegedly (1981) | Sea at dusk | TK-41 Tomkitten → SK-22 Fitterbugs | **Rules of engagement:** weapons hold until they fire first; three violations is a court martial |
+| 14 | Sea Harrumph (1982) | Stormy ocean, rain | Sea Harrumph → Dassalt Mirth IIIs | **Attacks from behind:** pull back to air-brake and they overshoot |
+| 15 | The Kill Chain | Above a sea of clouds | F-53½ Lightning… Eventually → WA-3 Big Ear + stealth fighters | **Kill chain:** radar planes cloak their fighters in stealth camo; shoot down the Big Ears to unveil them |
+
 Missions unlock as you win them. On the briefing card, Left and Right pick any unlocked mission.
 
-Missions 11–20 are still to build, from the plan below.
+Missions 16–20 are still to build.
 
 **Chapter 3: Greatest Hits**, planned: Operation Bowl-o, The Ace Who Wasn't, Line of Death, Sea Harrumph, Line of Death 2.
 
