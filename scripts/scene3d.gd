@@ -841,10 +841,10 @@ func _sync_enemies(sim, delta: float) -> void:
 			enemy_nodes.erase(id)
 
 
-## Swap a jet between its paint and stealth camo. The renderer doesn't pick
-## up a shadow-casting change on a live node (cloaked jets kept casting
-## shadows), so build a fresh node with the right setting before it enters
-## the scene, and carry over position, rotation and state.
+## Swap a jet between its paint and stealth camo (or the phantom's mist).
+## The renderer doesn't pick up a shadow-casting change on a live node, so
+## build a fresh node with the right setting before it enters the scene, and
+## carry over position, rotation and state.
 func _restealth(id: int, e: Dictionary, on: bool, look := "stealth") -> Node3D:
 	var old: Node3D = enemy_nodes[id]
 	var shape: String = Jets.get_jet(String(e.jet)).shape
@@ -878,11 +878,26 @@ func _set_stealth(node: Node3D, on: bool, skin: ShaderMaterial, look := "stealth
 			else:
 				mi.set_surface_override_material(0, skin)
 				mi.set_surface_override_material(1, JetMesh._glass())
-			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if on else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	if on:
+			# Stealth camo still casts a shadow: the one honest giveaway that
+			# lets you track a cloaked fighter. The phantom (mist) casts none.
+			var shadow: bool = not on or look == "stealth"
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadow else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if on and look == "ghost":
 		for c in node.get_children():
 			if c is GeometryInstance3D:
 				(c as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if on and look == "stealth":
+		# Transparent surfaces don't cast shadows, so add an invisible
+		# shadow-only twin of the jet: you can't see it, but the sun can.
+		for c in node.get_children():
+			if c is MeshInstance3D and (c as MeshInstance3D).mesh is ArrayMesh:
+				var twin := MeshInstance3D.new()
+				twin.mesh = (c as MeshInstance3D).mesh
+				twin.material_override = skin
+				twin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+				twin.name = "ShadowTwin"
+				node.add_child(twin)
+				break
 
 
 func _sync_bullets(sim) -> void:
